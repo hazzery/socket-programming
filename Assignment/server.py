@@ -2,7 +2,7 @@ from common import *
 import socket
 import sys
 
-MESSAGE_REQUEST_MAGIC_NUMBER = 0xAE73
+MESSAGE_MAGIC_NUMBER = 0xAE73
 
 if len(sys.argv) != 2:
     print("Usage: python3 server.py <port>")
@@ -41,19 +41,19 @@ except OSError:
     sys.exit(1)
 
 
-def decode_message_request(record: bytes) -> tuple[MessageType, str, str, str]:
+def decode_message_request(record: bytes) -> tuple[MessageType, str, str, bytes]:
     """
     Decodes the message request sent by the client
     :param record: A message packet
     :return: The individual fields of the message request
     """
     magic_number = record[0] << 8 | record[1]
-    if magic_number != MESSAGE_REQUEST_MAGIC_NUMBER:
+    if magic_number != MESSAGE_MAGIC_NUMBER:
         raise ValueError("Received message request with incorrect magic number")
 
-    try:
+    if 1 <= record[2] <= 2:
         mode = MessageType(record[2])
-    except ValueError:
+    else:
         raise ValueError("Received message request with invalid ID")
 
     user_name_length = record[3]
@@ -81,9 +81,41 @@ def decode_message_request(record: bytes) -> tuple[MessageType, str, str, str]:
                            receiver_name_length].decode()
 
     message = record[7 + user_name_length + receiver_name_length:7 + user_name_length +
-                     receiver_name_length + message_length].decode()
+                     receiver_name_length + message_length]
 
     return mode, user_name, receiver_name, message
+
+
+messages: dict[str, list[tuple[str, bytes]]] = dict()
+
+def create_message_response(receiver_name: str) -> tuple[bytes, int]:
+    """
+    Encodes a record containing all (up to 255) messages for the specified sender
+    :param receiver_name: The string name of the client requesting their messages
+    :return: A MessageResponse record
+    """
+    num_messages = len(messages.get(receiver_name, []))
+    more_messages = False
+    if num_messages > 255:
+        more_messages = True
+        num_messages = 255
+
+    record = bytearray(5)
+
+    record[0] = MESSAGE_MAGIC_NUMBER >> 8
+    record[1] = MESSAGE_MAGIC_NUMBER & 0xFF
+    record[2] = 3
+    record[3] = num_messages
+    record[4] = int(more_messages)
+
+    if num_messages > 0:
+        for sender, message in messages[receiver_name]:
+            record.append(len(receiver_name.encode()))
+            record.append(len(message) >> 8)
+            record.append(len(message) & 0xFF)
+            record.extend(message)
+
+    return record, num_messages
 
 
 while True:
@@ -107,5 +139,16 @@ while True:
         connection_socket.close()
         continue
 
-    if mode == MessageType.
+    if mode == MessageType.READ:
+        response, num_messages = create_message_response(sender_name)
+        connection_socket.send(response)
+        connection_socket.close()
+        print(f"{num_messages} message(s) delivered to {sender_name}")
 
+    elif mode == MessageType.CREATE:
+        if receiver_name not in messages:
+            messages[receiver_name] = []
+
+        messages[receiver_name].append((sender_name, message))
+        connection_socket.close()
+        print(f"Message arrived from {sender_name} to {receiver_name}")
