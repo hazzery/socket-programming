@@ -8,7 +8,7 @@ if len(sys.argv) != 2:
     print("Usage: python3 server.py <port>")
     sys.exit(1)
 
-if type(sys.argv[1]) != int:
+if not sys.argv[1].isdigit():
     print("Usage: python3 server.py <port>")
     print("Port must be an integer")
     sys.exit(1)
