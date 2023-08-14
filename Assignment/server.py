@@ -8,8 +8,6 @@ import sys
 
 from common import *
 
-
-MESSAGE_MAGIC_NUMBER = 0xAE73
 USAGE_PROMPT = "Usage: python3 server.py <port_number>"
 
 if len(sys.argv) != 2:

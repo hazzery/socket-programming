@@ -6,6 +6,8 @@ Harrison Parkes (hpa101) 94852440
 """
 from enum import Enum
 
+MESSAGE_MAGIC_NUMBER = 0xAE73
+
 
 class MessageType(Enum):
     READ = 1
