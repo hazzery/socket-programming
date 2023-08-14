@@ -91,6 +91,7 @@ def decode_message_request(record: bytes) -> tuple[MessageType, str, str, bytes]
 
 messages: dict[str, list[tuple[str, bytes]]] = dict()
 
+
 def create_message_response(receiver_name: str) -> tuple[bytes, int]:
     """
     Encodes a record containing all (up to 255) messages for the specified sender
