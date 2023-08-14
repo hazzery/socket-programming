@@ -111,7 +111,7 @@ def create_message_response(receiver_name: str) -> tuple[bytes, int]:
 
     record[0] = MESSAGE_MAGIC_NUMBER >> 8
     record[1] = MESSAGE_MAGIC_NUMBER & 0xFF
-    record[2] = int(MessageType.RESPONSE)
+    record[2] = MessageType.RESPONSE.value
     record[3] = num_messages
     record[4] = int(more_messages)
 
