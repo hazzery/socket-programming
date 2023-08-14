@@ -35,10 +35,10 @@ except socket.gaierror:
     print("Invalid host name")
     sys.exit(1)
 
-user_name = sys.argv[3].encode()
-if len(user_name) > 255:
+user_name = sys.argv[3]
+if len(user_name.encode()) > 255:
     print(usage_prompt)
-    print("Username must be at most 255 characters")
+    print("Username must be at most 255 bytes")
     sys.exit(1)
 
 try:
