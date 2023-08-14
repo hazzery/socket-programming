@@ -1,6 +1,8 @@
-from common import *
 import socket
 import sys
+
+from common import *
+
 
 MESSAGE_MAGIC_NUMBER = 0xAE73
 
