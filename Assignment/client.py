@@ -1,3 +1,8 @@
+"""
+Client side program for COSC264 socket programming assignment
+
+Harrison Parkes (hpa101) 94852440
+"""
 import socket
 import sys
 
