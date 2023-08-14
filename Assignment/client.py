@@ -26,8 +26,10 @@ if not 1024 <= port_number <= 64000:
     print("Port number must be between 1024 and 64000 (inclusive)")
     sys.exit(1)
 
+host_name = sys.argv[1]
+
 try:
-    socket.getaddrinfo(sys.argv[1], port_number)
+    socket.getaddrinfo(host_name, port_number)
 except socket.gaierror:
     print(usage_prompt)
     print("Invalid host name")
