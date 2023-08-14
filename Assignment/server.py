@@ -5,21 +5,22 @@ from common import *
 
 
 MESSAGE_MAGIC_NUMBER = 0xAE73
+USAGE_PROMPT = "Usage: python3 server.py <port_number>"
 
 if len(sys.argv) != 2:
-    print("Usage: python3 server.py <port>")
+    print(USAGE_PROMPT)
     sys.exit(1)
 
 if not sys.argv[1].isdigit():
-    print("Usage: python3 server.py <port>")
-    print("Port must be an integer")
+    print(USAGE_PROMPT)
+    print("Port number must be an integer")
     sys.exit(1)
 
 port = int(sys.argv[1])
 
 if not 1024 <= port <= 64000:
-    print("Usage: python3 server.py <port>")
-    print("Port must be between 1024 and 64000 (inclusive)")
+    print(USAGE_PROMPT)
+    print("Port number must be between 1024 and 64000 (inclusive)")
     sys.exit(1)
 
 # Create a TCP/IP socket
