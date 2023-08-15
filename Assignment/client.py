@@ -58,8 +58,8 @@ def create_message_request(message_type: MessageType, user_name: str) -> bytes:
     """
     Creates a message request packet
     :param message_type: The type of the request (READ or CREATE)
-    :param user_name:
-    :return:
+    :param user_name: The name of the user sending the request
+    :return: A message request packet as an array of bytes
     """
     receiver_name = ""
     message = ""
@@ -88,16 +88,32 @@ def create_message_request(message_type: MessageType, user_name: str) -> bytes:
     return record
 
 
-def decode_messages(message: bytes) -> list[tuple[str, str]]:
+def decode_messages(num_messages: int, record: bytes) -> list[tuple[str, str]]:
     """
+    Decode a singular message from a message response packet
+    :param num_messages: The number of messages to be decoded
+    :param record: An array of bytes containing the messages to be decoded
+    :return: A list of tuples containing the sender name and message
+    """
+    messages: list = [None] * num_messages
 
-    :param message:
-    :return:
-    """
-    sender_name_length = record[1]
-    message_length = (record[2] << 8) | record[3]
-    sender_name = record[4:4 + sender_name_length].decode()
-    message = record[4 + sender_name_length:4 + sender_name_length + message_length].decode()
+    index = 0
+    for i in range(num_messages):
+        sender_name_length = record[index]
+        index += 1
+
+        message_length = (record[index] << 8) | record[index + 1] & 0xFF
+        index += 2
+
+        sender_name = record[index:index + sender_name_length].decode()
+        index += sender_name_length
+
+        message = record[index:index + message_length].decode()
+        index += message_length
+
+        messages[i] = (sender_name, message)
+
+    return messages
 
 
 def decode_message_response(record: bytes) -> tuple[list[tuple[str, str]], bool]:
@@ -121,18 +137,18 @@ def decode_message_response(record: bytes) -> tuple[list[tuple[str, str]], bool]
     num_messages = record[3]
     more_messages = bool(record[4])
 
-    messages = decode_messages(record[5:])
+
+    messages = decode_messages(num_messages, record[5:])
 
     return messages, more_messages
 
 
+record = create_message_request(message_type, user_name)
 
 connection_socket = socket.socket()
 connection_socket.connect((host_name, port_number))
-
-record = create_message_request(message_type, user_name)
 connection_socket.send(record)
-print(f"{message_type} record sent to {user_name}")
+print(f"{message_type.name.lower()} record sent as {user_name}")
 
 if message_type == MessageType.READ:
     response = connection_socket.recv(4096)
@@ -142,6 +158,10 @@ if message_type == MessageType.READ:
     except ValueError as error:
         print(error)
         sys.exit(1)
+    for sender, message in messages:
+        print(f"Message from {sender}:\n{message}")
+    if more_messages:
+        print("More messages available, please send another request")
 
 connection_socket.close()
 sys.exit(0)

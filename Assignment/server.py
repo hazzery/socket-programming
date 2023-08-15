@@ -81,13 +81,15 @@ def decode_message_request(record: bytes) -> tuple[MessageType, str, str, bytes]
         if message_length < 1:
             raise ValueError("Received create request with insufficient message length")
 
-    user_name = record[7:7 + user_name_length].decode()
+    index = 7
 
-    receiver_name = record[7 + user_name_length:7 + user_name_length +
-                           receiver_name_length].decode()
+    user_name = record[index:index + user_name_length].decode()
+    index += user_name_length
 
-    message = record[7 + user_name_length + receiver_name_length:7 + user_name_length +
-                     receiver_name_length + message_length]
+    receiver_name = record[index:index + receiver_name_length].decode()
+    index += receiver_name_length
+
+    message = record[index:index + message_length]
 
     return mode, user_name, receiver_name, message
 
@@ -117,9 +119,11 @@ def create_message_response(receiver_name: str) -> tuple[bytes, int]:
 
     if num_messages > 0:
         for sender, message in messages[receiver_name]:
-            record.append(len(receiver_name.encode()))
+            print(f"{sender}'s message: \"{message.decode()}\" has been delivered to {receiver_name}")
+            record.append(len(sender.encode()))
             record.append(len(message) >> 8)
             record.append(len(message) & 0xFF)
+            record.extend(sender.encode())
             record.extend(message)
 
     return record, num_messages
@@ -158,4 +162,4 @@ while True:
 
         messages[receiver_name].append((sender_name, message))
         connection_socket.close()
-        print(f"Message arrived from {sender_name} to {receiver_name}")
+        print(f"{sender_name} sends the message \"{message.decode()}\" to {receiver_name}")
