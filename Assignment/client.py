@@ -137,7 +137,6 @@ def decode_message_response(record: bytes) -> tuple[list[tuple[str, str]], bool]
     num_messages = record[3]
     more_messages = bool(record[4])
 
-
     messages = decode_messages(num_messages, record[5:])
 
     return messages, more_messages
@@ -159,7 +158,9 @@ if message_type == MessageType.READ:
         print(error)
         sys.exit(1)
     for sender, message in messages:
-        print(f"Message from {sender}:\n{message}")
+        print(f"Message from {sender}:\n{message}\n")
+    if len(messages) == 0:
+        print("No messages available")
     if more_messages:
         print("More messages available, please send another request")
 
