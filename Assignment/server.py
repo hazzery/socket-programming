@@ -142,8 +142,8 @@ while True:
     try:
         record = connection_socket.recv(4096)
     except socket.timeout as error:
-        # print("Timed out while waiting for message request")
         print(error)
+        print("Timed out while waiting for message request")
         connection_socket.close()
         continue
 
