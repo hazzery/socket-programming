@@ -17,4 +17,9 @@ for name in names:
 
     process.terminate()
 
-sp.Popen(["python3", "client.py", "localhost", "1024", "John", "read"])
+read = sp.Popen(["python3", "client.py", "localhost", "1024", "John", "read"],
+                text=True, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+output, errors = read.communicate()
+
+print(output)
+print(errors)
