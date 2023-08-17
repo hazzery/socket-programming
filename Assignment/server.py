@@ -118,13 +118,17 @@ def create_message_response(receiver_name: str) -> tuple[bytes, int]:
     record[4] = int(more_messages)
 
     if num_messages > 0:
-        for sender, message in messages[receiver_name]:
-            print(f"{sender}'s message: \"{message.decode()}\" has been delivered to {receiver_name}")
+        for i in range(num_messages):
+            sender, message = messages[receiver_name][i]
+
             record.append(len(sender.encode()))
             record.append(len(message) >> 8)
             record.append(len(message) & 0xFF)
             record.extend(sender.encode())
             record.extend(message)
+
+            print(f"{sender}'s message: \"{message.decode()}\" has been delivered to {receiver_name}")
+        del messages[receiver_name][:num_messages]
 
     return record, num_messages
 
