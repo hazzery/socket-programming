@@ -154,14 +154,14 @@ except ConnectionRefusedError:
 except socket.timeout:
     print("Connection timed out, likely due to invalid host name")
     sys.exit(1)
+finally:
+    connection_socket.close()
 
 try:
     connection_socket.send(record)
-except BrokenPipeError:
-    print("Connection closed by server")
-    sys.exit(1)
 except socket.timeout:
-    print("Connection timed out")
+    print("Connection timed out while sending message to server")
+    connection_socket.close()
     sys.exit(1)
 
 
@@ -174,7 +174,9 @@ if message_type == MessageType.READ:
         messages, more_messages = decode_message_response(response)
     except ValueError as error:
         print(error)
+        connection_socket.close()
         sys.exit(1)
+
     for sender, message in messages:
         print(f"Message from {sender}:\n{message}\n")
     if len(messages) == 0:
