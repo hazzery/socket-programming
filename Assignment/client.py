@@ -145,8 +145,26 @@ def decode_message_response(record: bytes) -> tuple[list[tuple[str, str]], bool]
 record = create_message_request(message_type, user_name)
 
 connection_socket = socket.socket()
-connection_socket.connect((host_name, port_number))
-connection_socket.send(record)
+connection_socket.settimeout(1)
+try:
+    connection_socket.connect((host_name, port_number))
+except ConnectionRefusedError:
+    print("Connection refused by server, likely due to invalid port number")
+    sys.exit(1)
+except socket.timeout:
+    print("Connection timed out, likely due to invalid host name")
+    sys.exit(1)
+
+try:
+    connection_socket.send(record)
+except BrokenPipeError:
+    print("Connection closed by server")
+    sys.exit(1)
+except socket.timeout:
+    print("Connection timed out")
+    sys.exit(1)
+
+
 print(f"{message_type.name.lower()} record sent as {user_name}")
 
 if message_type == MessageType.READ:
