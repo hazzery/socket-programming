@@ -175,6 +175,7 @@ def run_server(welcoming_socket: socket.socket):
         mode, sender_name, receiver_name, message = decode_message_request(record)
     except ValueError as error:
         print(error)
+        print("Message request discarded")
         connection_socket.close()
         return
 
