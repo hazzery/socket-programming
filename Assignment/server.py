@@ -113,12 +113,11 @@ def decode_message_request(record: bytes) -> tuple[MessageType, str, str, bytes]
     return mode, user_name, receiver_name, message
 
 
-messages: dict[str, list[tuple[str, bytes]]] = dict()
-
-
-def create_message_response(receiver_name: str) -> tuple[bytes, int]:
+def create_message_response(receiver_name: str, messages: dict[str, list[tuple[str, bytes]]])\
+        -> tuple[bytes, int]:
     """
     Encodes a record containing all (up to 255) messages for the specified sender
+    :param messages:
     :param receiver_name: The string name of the client requesting their messages
     :return: A MessageResponse record
     """
@@ -153,10 +152,11 @@ def create_message_response(receiver_name: str) -> tuple[bytes, int]:
     return record, num_messages
 
 
-def run_server(welcoming_socket: socket.socket):
+def run_server(welcoming_socket: socket.socket, messages: dict[str, list[tuple[str, bytes]]]):
     """
     Runs the server side of the program
     :param welcoming_socket: The welcoming socket to accept connections on
+    :param messages: A dictionary of messages for each user
     """
     connection_socket, client_address = welcoming_socket.accept()
     connection_socket.settimeout(1)
@@ -180,7 +180,7 @@ def run_server(welcoming_socket: socket.socket):
         return
 
     if mode == MessageType.READ:
-        response, num_messages = create_message_response(sender_name)
+        response, num_messages = create_message_response(sender_name, messages)
         connection_socket.send(response)
         connection_socket.close()
         print(f"{num_messages} message(s) delivered to {sender_name}")
@@ -197,8 +197,9 @@ def run_server(welcoming_socket: socket.socket):
 def main():
     port_number = parse_arguments()
     welcoming_socket = open_welcoming_socket(port_number)
+    messages: dict[str, list[tuple[str, bytes]]] = dict()
     while True:
-        run_server(welcoming_socket)
+        run_server(welcoming_socket, messages)
 
 
 if __name__ == "__main__":
