@@ -10,41 +10,60 @@ from common import *
 
 USAGE_PROMPT = "Usage: python3 server.py <port_number>"
 
-if len(sys.argv) != 2:
-    print(USAGE_PROMPT)
-    sys.exit(1)
 
-if not sys.argv[1].isdigit():
-    print(USAGE_PROMPT)
-    print("Port number must be an integer")
-    sys.exit(1)
+def parse_arguments() -> int:
+    """
+    Parses the command line arguments, ensuring they are valid.
+    :return: The port number
+    """
+    if len(sys.argv) != 2:
+        print(USAGE_PROMPT)
+        sys.exit(1)
 
-port = int(sys.argv[1])
+    if not sys.argv[1].isdigit():
+        print(USAGE_PROMPT)
+        print("Port number must be an integer")
+        sys.exit(1)
 
-if not 1024 <= port <= 64000:
-    print(USAGE_PROMPT)
-    print("Port number must be between 1024 and 64000 (inclusive)")
-    sys.exit(1)
+    port_number = int(sys.argv[1])
 
-# Create a TCP/IP socket
-welcoming_socket = socket.socket()
+    if not 1024 <= port_number <= 64000:
+        print(USAGE_PROMPT)
+        print("Port number must be between 1024 and 64000 (inclusive)")
+        sys.exit(1)
 
-# Bind the socket to the port
-server_address = ("localhost", port)
-print('starting up on %s port %s' % server_address)
-try:
-    welcoming_socket.bind(server_address)
-except OSError:
-    print("Error binding socket on provided port")
-    sys.exit(1)
+    return port_number
 
-# The server listens for incoming connections
-# A maximum of 5 unprocessed connections are allowed
-try:
-    welcoming_socket.listen(5)
-except OSError:
-    print("Error listening on provided port")
-    sys.exit(1)
+
+def open_welcoming_socket(port_number: int) -> socket.socket:
+    """
+    Opens a welcoming socket on the provided port
+    :param port_number: The port number to open the socket on
+    :return: The welcoming socket
+    """
+    # Create a TCP/IP socket
+    welcoming_socket = socket.socket()
+
+    # Bind the socket to the port
+    server_address = ("localhost", port_number)
+    print("starting up on %s port %s" % server_address)
+    try:
+        welcoming_socket.bind(server_address)
+    except OSError:
+        print("Error binding socket on provided port")
+        welcoming_socket.close()
+        sys.exit(1)
+
+    # The server listens for incoming connections
+    # A maximum of 5 unprocessed connections are allowed
+    try:
+        welcoming_socket.listen(5)
+    except OSError:
+        print("Error listening on provided port")
+        welcoming_socket.close()
+        sys.exit(1)
+
+    return welcoming_socket
 
 
 def decode_message_request(record: bytes) -> tuple[MessageType, str, str, bytes]:
@@ -127,17 +146,22 @@ def create_message_response(receiver_name: str) -> tuple[bytes, int]:
             record.extend(sender.encode())
             record.extend(message)
 
-            print(f"{sender}'s message: \"{message.decode()}\" has been delivered to {receiver_name}")
+            print(f"{sender}'s message: \"{message.decode()}\" "
+                  f"has been delivered to {receiver_name}")
         del messages[receiver_name][:num_messages]
 
     return record, num_messages
 
 
-while True:
+def run_server(welcoming_socket: socket.socket):
+    """
+    Runs the server side of the program
+    :param welcoming_socket: The welcoming socket to accept connections on
+    """
     connection_socket, client_address = welcoming_socket.accept()
     connection_socket.settimeout(1)
 
-    print('connection from', client_address)
+    print("New client connection from", client_address)
 
     try:
         record = connection_socket.recv(4096)
@@ -145,14 +169,14 @@ while True:
         print(error)
         print("Timed out while waiting for message request")
         connection_socket.close()
-        continue
+        return
 
     try:
         mode, sender_name, receiver_name, message = decode_message_request(record)
     except ValueError as error:
         print(error)
         connection_socket.close()
-        continue
+        return
 
     if mode == MessageType.READ:
         response, num_messages = create_message_response(sender_name)
@@ -167,3 +191,14 @@ while True:
         messages[receiver_name].append((sender_name, message))
         connection_socket.close()
         print(f"{sender_name} sends the message \"{message.decode()}\" to {receiver_name}")
+
+
+def main():
+    port_number = parse_arguments()
+    welcoming_socket = open_welcoming_socket(port_number)
+    while True:
+        run_server(welcoming_socket)
+
+
+if __name__ == "__main__":
+    main()

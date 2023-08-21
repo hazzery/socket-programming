@@ -8,50 +8,58 @@ import sys
 
 from common import *
 
-usage_prompt = "Usage: python3 client.py <host_name> <port_number> <user_name> <message_type>"
+USAGE_PROMPT = "Usage: python3 client.py <host_name> <port_number> <user_name> <message_type>"
 
-if len(sys.argv) != 5:
-    print(usage_prompt)
-    sys.exit(1)
 
-if not sys.argv[2].isdigit():
-    print(usage_prompt)
-    print("Port number must be an integer")
-    sys.exit(1)
+def parse_arguments() -> tuple[str, int, str, MessageType]:
+    """
+    Parses the command line arguments, ensuring they are valid.
+    :return: A tuple containing the host name, port number, username, and message type
+    """
+    if len(sys.argv) != 5:
+        print(USAGE_PROMPT)
+        sys.exit(1)
 
-port_number = int(sys.argv[2])
+    if not sys.argv[2].isdigit():
+        print(USAGE_PROMPT)
+        print("Port number must be an integer")
+        sys.exit(1)
 
-if not 1024 <= port_number <= 64000:
-    print(usage_prompt)
-    print("Port number must be between 1024 and 64000 (inclusive)")
-    sys.exit(1)
+    port_number = int(sys.argv[2])
 
-host_name = sys.argv[1]
+    if not 1024 <= port_number <= 64000:
+        print(USAGE_PROMPT)
+        print("Port number must be between 1024 and 64000 (inclusive)")
+        sys.exit(1)
 
-try:
-    socket.getaddrinfo(host_name, port_number)
-except socket.gaierror:
-    print(usage_prompt)
-    print("Invalid host name")
-    sys.exit(1)
+    host_name = sys.argv[1]
 
-user_name = sys.argv[3]
-if len(user_name.encode()) > 255:
-    print(usage_prompt)
-    print("Username must be at most 255 bytes")
-    sys.exit(1)
+    try:
+        socket.getaddrinfo(host_name, port_number)
+    except socket.gaierror:
+        print(USAGE_PROMPT)
+        print("Invalid host name")
+        sys.exit(1)
 
-try:
-    message_type = MessageType[sys.argv[4].upper()]
-except KeyError:
-    print(usage_prompt)
-    print("Invalid message type, must be \"read\" or \"create\"")
-    sys.exit(1)
+    user_name = sys.argv[3]
+    if len(user_name.encode()) > 255:
+        print(USAGE_PROMPT)
+        print("Username must be at most 255 bytes")
+        sys.exit(1)
 
-if message_type == MessageType.RESPONSE:
-    print(usage_prompt)
-    print("Message type \"response\" not allowed, must be \"read\" or \"create\"")
-    sys.exit(1)
+    try:
+        message_type = MessageType[sys.argv[4].upper()]
+    except KeyError:
+        print(USAGE_PROMPT)
+        print("Invalid message type, must be \"read\" or \"create\"")
+        sys.exit(1)
+
+    if message_type == MessageType.RESPONSE:
+        print(USAGE_PROMPT)
+        print("Message type \"response\" not allowed, must be \"read\" or \"create\"")
+        sys.exit(1)
+
+    return host_name, port_number, user_name, message_type
 
 
 def create_message_request(message_type: MessageType, user_name: str) -> bytes:
@@ -142,34 +150,57 @@ def decode_message_response(record: bytes) -> tuple[list[tuple[str, str]], bool]
     return messages, more_messages
 
 
-record = create_message_request(message_type, user_name)
+def open_socket(host_name: str, port_number: int) -> socket.socket:
+    """
+    Opens a socket to the server
+    :param host_name: The IP address of the server
+    :param port_number: The port number the server is listening on
+    :return: A socket connected to the server
+    """
+    connection_socket = socket.socket()
+    connection_socket.settimeout(1)
 
-connection_socket = socket.socket()
-connection_socket.settimeout(1)
-try:
-    connection_socket.connect((host_name, port_number))
-except ConnectionRefusedError:
-    print("Connection refused by server, likely due to invalid port number")
-    sys.exit(1)
-except socket.timeout:
-    print("Connection timed out, likely due to invalid host name")
-    sys.exit(1)
-finally:
-    connection_socket.close()
+    try:
+        connection_socket.connect((host_name, port_number))
+    except ConnectionRefusedError:
+        print("Connection refused by server, likely due to invalid port number")
+        connection_socket.close()
+        sys.exit(1)
+    except socket.timeout:
+        print("Connection timed out, likely due to invalid host name")
+        connection_socket.close()
+        sys.exit(1)
 
-try:
-    connection_socket.send(record)
-except socket.timeout:
-    print("Connection timed out while sending message to server")
-    connection_socket.close()
-    sys.exit(1)
+    return connection_socket
 
 
-print(f"{message_type.name.lower()} record sent as {user_name}")
+def send_message_request(record: bytes, connection_socket: socket.socket,
+                         message_type: MessageType, user_name: str):
+    """
+    Sends a message request record to the server
+    :param record: The message request packet to be sent
+    :param connection_socket: The socket to send the packet over
+    :param message_type: The type of message request being sent
+    :param user_name: The name of the user sending the request
+    """
+    try:
+        connection_socket.send(record)
+    except socket.timeout:
+        print("Connection timed out while sending message to server")
+        connection_socket.close()
+        sys.exit(1)
 
-if message_type == MessageType.READ:
+    print(f"{message_type.name.lower()} record sent as {user_name}")
+
+
+def read_message_response(connection_socket: socket.socket):
+    """
+    Reads a message response from the server
+    :param connection_socket: The socket to read the response from
+    :return:
+    """
     response = connection_socket.recv(4096)
-    print("Received response from server")
+    print("Received response from server\n")
     try:
         messages, more_messages = decode_message_response(response)
     except ValueError as error:
@@ -179,10 +210,27 @@ if message_type == MessageType.READ:
 
     for sender, message in messages:
         print(f"Message from {sender}:\n{message}\n")
+
     if len(messages) == 0:
         print("No messages available")
-    if more_messages:
+    elif more_messages:
         print("More messages available, please send another request")
 
-connection_socket.close()
-sys.exit(0)
+
+def main():
+    """
+    Defines the main flow of the client program
+    """
+    host_name, port_number, user_name, message_type = parse_arguments()
+    record = create_message_request(message_type, user_name)
+    connection_socket = open_socket(host_name, port_number)
+    send_message_request(record, connection_socket, message_type, user_name)
+    if message_type == MessageType.READ:
+        read_message_response(connection_socket)
+
+    connection_socket.close()
+    sys.exit(0)
+
+
+if __name__ == '__main__':
+    main()
