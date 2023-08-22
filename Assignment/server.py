@@ -132,19 +132,19 @@ def create_message_response(receiver_name: str, messages: dict[str, list[tuple[s
     record[3] = num_messages
     record[4] = int(more_messages)
 
-    if num_messages > 0:
-        for i in range(num_messages):
-            sender, message = messages[receiver_name][i]
+    for i in range(num_messages):
+        sender, message = messages[receiver_name][i]
 
-            record.append(len(sender.encode()))
-            record.append(len(message) >> 8)
-            record.append(len(message) & 0xFF)
-            record.extend(sender.encode())
-            record.extend(message)
+        record.append(len(sender.encode()))
+        record.append(len(message) >> 8)
+        record.append(len(message) & 0xFF)
+        record.extend(sender.encode())
+        record.extend(message)
 
-            print(f"{sender}'s message: \"{message.decode()}\" "
-                  f"has been delivered to {receiver_name}")
-        del messages[receiver_name][:num_messages]
+        print(f"{sender}'s message: \"{message.decode()}\" "
+              f"has been delivered to {receiver_name}")
+        
+    del messages.get(receiver_name, [])[:num_messages]
 
     return record, num_messages
 
