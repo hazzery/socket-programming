@@ -191,7 +191,6 @@ def read_message_response(connection_socket: socket.socket):
     """
     Reads a message response from the server
     :param connection_socket: The socket to read the response from
-    :return:
     """
     response = connection_socket.recv(4096)
     print("Received response from server\n")
@@ -212,13 +211,11 @@ def read_message_response(connection_socket: socket.socket):
 
 
 def main():
-    """
-    Defines the main flow of the client program
-    """
     host_name, port_number, user_name, message_type = parse_arguments()
     record = create_message_request(message_type, user_name)
     connection_socket = open_socket(host_name, port_number)
     send_message_request(record, connection_socket, message_type, user_name)
+
     if message_type == MessageType.READ:
         read_message_response(connection_socket)
 
