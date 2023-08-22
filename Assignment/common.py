@@ -13,3 +13,20 @@ class MessageType(Enum):
     READ = 1
     CREATE = 2
     RESPONSE = 3
+
+
+def parse_port_number(port_number: str) -> int:
+    """
+    Checks that the provided port number is valid
+    :param port_number: A string containing the port number
+    :return: The port number as an integer
+    """
+    if not port_number.isdigit():
+        raise TypeError("Port number must be an integer")
+
+    port_number = int(port_number)
+
+    if not 1024 <= port_number <= 64000:
+        raise ValueError("Port number must be between 1024 and 64000 (inclusive)")
+
+    return port_number

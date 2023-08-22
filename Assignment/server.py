@@ -20,16 +20,13 @@ def parse_arguments() -> int:
         print(USAGE_PROMPT)
         sys.exit(1)
 
-    if not sys.argv[1].isdigit():
-        print(USAGE_PROMPT)
-        print("Port number must be an integer")
-        sys.exit(1)
+    _, port_number = sys.argv
 
-    port_number = int(sys.argv[1])
-
-    if not 1024 <= port_number <= 64000:
+    try:
+        port_number = parse_port_number(port_number)
+    except (TypeError, ValueError) as error:
         print(USAGE_PROMPT)
-        print("Port number must be between 1024 and 64000 (inclusive)")
+        print(error)
         sys.exit(1)
 
     return port_number

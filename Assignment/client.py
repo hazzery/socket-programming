@@ -20,19 +20,14 @@ def parse_arguments() -> tuple[str, int, str, MessageType]:
         print(USAGE_PROMPT)
         sys.exit(1)
 
-    if not sys.argv[2].isdigit():
+    _, host_name, port_number, user_name, message_type = sys.argv
+
+    try:
+        port_number = parse_port_number(port_number)
+    except (TypeError, ValueError) as error:
         print(USAGE_PROMPT)
-        print("Port number must be an integer")
+        print(error)
         sys.exit(1)
-
-    port_number = int(sys.argv[2])
-
-    if not 1024 <= port_number <= 64000:
-        print(USAGE_PROMPT)
-        print("Port number must be between 1024 and 64000 (inclusive)")
-        sys.exit(1)
-
-    host_name = sys.argv[1]
 
     try:
         socket.getaddrinfo(host_name, port_number)
@@ -41,14 +36,13 @@ def parse_arguments() -> tuple[str, int, str, MessageType]:
         print("Invalid host name")
         sys.exit(1)
 
-    user_name = sys.argv[3]
     if len(user_name.encode()) > 255:
         print(USAGE_PROMPT)
         print("Username must be at most 255 bytes")
         sys.exit(1)
 
     try:
-        message_type = MessageType[sys.argv[4].upper()]
+        message_type = MessageType[message_type.upper()]
     except KeyError:
         print(USAGE_PROMPT)
         print("Invalid message type, must be \"read\" or \"create\"")
