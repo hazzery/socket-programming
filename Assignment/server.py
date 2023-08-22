@@ -196,7 +196,12 @@ def main():
     welcoming_socket = open_welcoming_socket(port_number)
     messages: dict[str, list[tuple[str, bytes]]] = dict()
     while True:
-        run_server(welcoming_socket, messages)
+        try:
+            run_server(welcoming_socket, messages)
+        except KeyboardInterrupt:
+            print("\nServer shutting down")
+            welcoming_socket.close()
+            sys.exit(0)
 
 
 if __name__ == "__main__":
