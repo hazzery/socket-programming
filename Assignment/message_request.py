@@ -1,4 +1,4 @@
-from pythonlangutil.overload import Overload  # , signature
+from pythonlangutil.overload import Overload, signature
 from .message_type import MessageType
 from .record import Record
 
@@ -6,6 +6,7 @@ from .record import Record
 class MessageRequest(Record):
 
     @Overload
+    @signature("MessageType", "str", "str", "str")
     def __init__(self, message_type: MessageType, user_name: str,
                  receiver_name: str, message: str):
         """
@@ -37,6 +38,7 @@ class MessageRequest(Record):
         return bytes(self.record)
 
     @__init__.overload
+    @signature("bytes")
     def __init__(self, record: bytes):
         """
         Decodes a message request packet
