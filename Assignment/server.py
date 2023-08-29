@@ -21,7 +21,7 @@ class Server(CommandLineApplication):
         super().__init__(OrderedDict(port_number=PortNumber))
 
         try:
-            self.port_number = self.parse_arguments(arguments)
+            self.port_number, = self.parse_arguments(arguments)
         except (TypeError, ValueError) as error:
             raise error
 
@@ -34,9 +34,7 @@ class Server(CommandLineApplication):
         :param arguments: The command line arguments as a list of strings
         :return: A tuple containing the port number
         """
-        port_number, = super().parse_arguments(arguments)
-
-        return port_number
+        return super().parse_arguments(arguments)
 
     def run(self):
         try:
