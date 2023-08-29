@@ -11,7 +11,6 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
         :param parameters: A dictionary containing the parameters for the command line application
         """
         self.parameters = parameters
-        self.arguments = None
 
     @property
     def usage_prompt(self):
