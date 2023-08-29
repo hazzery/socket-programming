@@ -30,19 +30,17 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
             print(self.usage_prompt)
             raise ValueError("Invalid number of arguments")
 
-        arguments = []
-        for argument, (parameter, parameter_type) in zip(arguments, self.parameters):
-            print(argument, parameter, parameter_type)
-
+        typed_arguments = []
+        for argument, (parameter, parameter_type) in zip(arguments, self.parameters.items()):
             try:
                 argument = parameter_type(argument)
-                arguments.append(argument)
+                typed_arguments.append(argument)
             except ValueError as error:
                 # log error
                 print(self.usage_prompt)
                 raise TypeError(f"{parameter} has invalid type {type(argument)}")
 
-        return tuple(arguments)
+        return tuple(typed_arguments)
 
     @abc.abstractmethod
     def run(self):
