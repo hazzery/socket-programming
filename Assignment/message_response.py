@@ -41,6 +41,13 @@ class MessageResponse(Record):
 
         del messages.get(receiver_name, [])[:num_messages]
 
+    def to_bytes(self) -> bytes:
+        """
+        Returns the message response packet
+        :return: A byte array holding the message response
+        """
+        return bytes(self.record)
+
     @__init__.overload
     @signature("bytes")
     def __init__(self, record: bytes):
