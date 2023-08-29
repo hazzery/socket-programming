@@ -79,3 +79,11 @@ class MessageResponse(Record):
             index += message_length
 
             self.messages.append((sender_name, message))
+
+    def decode(self) -> tuple[list[tuple[str, str]], bool]:
+        """
+        Decodes the message response packet
+        :return: A tuple containing a list of messages and a boolean
+            indicating whether there are more messages to be received
+        """
+        return self.messages, self.more_messages
