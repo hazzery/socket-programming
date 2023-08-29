@@ -3,10 +3,10 @@ Server side program for COSC264 socket programming assignment
 
 Harrison Parkes (hpa101) 94852440
 """
+from collections import OrderedDict
 import logging
 import socket
 import sys
-from collections import OrderedDict
 
 from Assignment.message_request import MessageRequest
 from Assignment.message_response import MessageResponse
