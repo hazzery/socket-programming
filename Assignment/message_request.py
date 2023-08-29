@@ -81,3 +81,10 @@ class MessageRequest(Record):
         index += receiver_name_length
 
         self.message = record[index:index + message_length]
+
+    def decode(self) -> tuple[MessageType, str, str, bytes]:
+        """
+        Decodes the message request packet
+        :return: A tuple containing the message type, username, receiver name and message
+        """
+        return self.message_type, self.user_name, self.receiver_name, self.message
