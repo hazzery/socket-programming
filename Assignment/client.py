@@ -34,6 +34,7 @@ class Client(CommandLineApplication):
     def parse_arguments(self, arguments: list[str]) -> tuple[str, PortNumber, str, MessageType]:
         """
         Parses the command line arguments, ensuring they are valid.
+        :param arguments: The command line arguments as a list of strings
         :return: A tuple containing the host name, port number, username, and message type
         """
 
