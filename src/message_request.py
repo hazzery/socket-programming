@@ -40,7 +40,7 @@ class MessageRequest(Record):
         return bytes(self.record)
 
     @classmethod
-    def from_bytes(cls, record: bytes) -> "MessageRequest":
+    def from_record(cls, record: bytes) -> "MessageRequest":
         """
         Decodes a message request packet
         :param record: An array of bytes containing the message request

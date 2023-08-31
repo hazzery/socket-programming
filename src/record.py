@@ -18,7 +18,7 @@ class Record(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def from_bytes(cls, record: bytes) -> "Record":
+    def from_record(cls, record: bytes) -> "Record":
         raise NotImplementedError
 
     @abc.abstractmethod
