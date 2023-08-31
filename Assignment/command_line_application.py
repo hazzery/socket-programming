@@ -38,7 +38,8 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
             except (TypeError, ValueError) as error:
                 # log error
                 print(self.usage_prompt)
-                raise TypeError(f"{parameter} has invalid type {type(argument)}")
+                raise TypeError(f"Invalid {parameter}! Must conform to {parameter_type}.") from None
+
 
         return tuple(typed_arguments)
 
