@@ -1,4 +1,3 @@
-from pythonlangutil.overload import Overload, signature
 import abc
 
 
@@ -9,16 +8,19 @@ class Record(metaclass=abc.ABCMeta):
 
     MAGIC_NUMBER = 0xAE73
 
-    @Overload
-    @signature("tuple")
     @abc.abstractmethod
     def __init__(self, *args):
-        self.record: bytearray
         raise NotImplementedError
 
-    @__init__.overload
-    @signature("bytes")
     @abc.abstractmethod
-    def __init__(self, record: bytes):
+    def to_bytes(self) -> bytes:
         raise NotImplementedError
 
+    @classmethod
+    @abc.abstractmethod
+    def from_bytes(cls, record: bytes) -> "Record":
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def decode(self) -> tuple:
+        raise NotImplementedError
