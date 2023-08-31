@@ -1,6 +1,7 @@
-from message_type import MessageType
-from record import Record
 from typing import Union
+
+from .message_type import MessageType
+from .record import Record
 
 
 class MessageResponse(Record):
