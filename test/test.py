@@ -1,6 +1,6 @@
 import subprocess as sp
 
-with open('names.txt') as names_file:
+with open('resources/names.txt') as names_file:
     names = names_file.readlines()
 
 for name in names:
