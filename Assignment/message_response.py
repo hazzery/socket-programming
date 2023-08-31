@@ -69,7 +69,7 @@ class MessageResponse(Record):
 
         num_messages = record[3]
         self.more_messages = bool(record[4])
-        self.messages: list = [None] * num_messages
+        self.messages: list = []
 
         index = 0
         for _ in range(num_messages):
