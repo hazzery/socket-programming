@@ -76,7 +76,7 @@ class Client(CommandLineApplication):
                 connection_socket.send(record)
                 if self.message_type == MessageType.READ:
                     response = connection_socket.recv(4096)
-                    response = MessageResponse(response)
+                    response = MessageResponse.from_record(response)
 
         except ConnectionRefusedError as error:
             logging.error(error)
@@ -110,6 +110,7 @@ class Client(CommandLineApplication):
         if self.message_type == MessageType.CREATE:
             self.receiver_name = input("Enter the name of the receiver: ")
             self.message = input("Enter the message to be sent: ")
+
         request = MessageRequest(self.message_type, self.user_name,
                                  self.receiver_name, self.message)
         response = self.send_message_request(request)

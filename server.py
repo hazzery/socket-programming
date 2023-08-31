@@ -72,9 +72,10 @@ class Server(CommandLineApplication):
                 message_type, sender_name, receiver_name, message = request.decode()
 
                 if message_type == MessageType.READ:
-                    response = MessageResponse(sender_name, self.messages)
+                    response = MessageResponse(self.messages.get(sender_name, []))
                     record = response.to_bytes()
                     connection_socket.send(record)
+                    del self.messages.get(sender_name, [])[:response.num_messages]
                     print(f"{response.num_messages} message(s) delivered to {sender_name}")
 
                 elif message_type == MessageType.CREATE:

@@ -1,56 +1,43 @@
-from pythonlangutil.overload import Overload, signature
 from message_type import MessageType
 from record import Record
+from typing import Union
 
 
 class MessageResponse(Record):
 
-    @Overload
-    @signature("str", "dict")
-    def __init__(self, receiver_name: str, messages: dict[str, list[tuple[str, bytes]]]):
+    def __init__(self, messages: list[tuple[str, Union[str, bytes]]]):
         """
         Encodes a record containing all (up to 255) messages for the specified sender
-        :param messages:
-        :param receiver_name: The string name of the client requesting their messages
+        :param messages: A list of all the messages to be put in the record
         """
-        self.num_messages = len(messages.get(receiver_name, []))
-        more_messages = False
-        if self.num_messages > 255:
-            more_messages = True
-            self.num_messages = 255
+        self.num_messages = min(len(messages), 255)
+        self.more_messages = len(messages) > 255
 
+        self.messages = messages[:self.num_messages]
         self.record = bytearray(5)
-
-        self.record[0] = Record.MAGIC_NUMBER >> 8
-        self.record[1] = Record.MAGIC_NUMBER & 0xFF
-        self.record[2] = MessageType.RESPONSE.value
-        self.record[3] = self.num_messages
-        self.record[4] = int(more_messages)
-
-        for i in range(self.num_messages):
-            sender, message = messages[receiver_name][i]
-
-            self.record.append(len(sender.encode()))
-            self.record.append(len(message) >> 8)
-            self.record.append(len(message) & 0xFF)
-            self.record.extend(sender.encode())
-            self.record.extend(message)
-
-            print(f"{sender}'s message: \"{message.decode()}\" "
-                  f"has been delivered to {receiver_name}")
-
-        del messages.get(receiver_name, [])[:self.num_messages]
 
     def to_bytes(self) -> bytes:
         """
         Returns the message response packet
         :return: A byte array holding the message response
         """
+        self.record[0] = Record.MAGIC_NUMBER >> 8
+        self.record[1] = Record.MAGIC_NUMBER & 0xFF
+        self.record[2] = MessageType.RESPONSE.value
+        self.record[3] = self.num_messages
+        self.record[4] = int(self.more_messages)
+
+        for sender, message in self.messages:
+            self.record.append(len(sender.encode()))
+            self.record.append(len(message) >> 8)
+            self.record.append(len(message) & 0xFF)
+            self.record.extend(sender.encode())
+            self.record.extend(message)
+
         return bytes(self.record)
 
-    @__init__.overload
-    @signature("bytes")
-    def __init__(self, record: bytes):
+    @classmethod
+    def from_record(cls, record: bytes) -> "MessageResponse":
         """
         Decodes a message response packet
         :param record: The packet to be decoded
@@ -68,8 +55,7 @@ class MessageResponse(Record):
                              f"expected RESPONSE")
 
         num_messages = record[3]
-        self.more_messages = bool(record[4])
-        self.messages: list = []
+        messages: list[tuple[str, str]] = []
 
         index = 5
         for _ in range(num_messages):
@@ -85,7 +71,12 @@ class MessageResponse(Record):
             message = record[index:index + message_length].decode()
             index += message_length
 
-            self.messages.append((sender_name, message))
+            messages.append((sender_name, message))
+
+        response = cls(messages)
+        response.more_messages = bool(record[4])
+
+        return response
 
     def decode(self) -> tuple[list[tuple[str, str]], bool]:
         """
