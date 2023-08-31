@@ -122,7 +122,7 @@ def main():
     try:
         client = Client(sys.argv[1:])
         client.run()
-    except SystemExit as error:
+    except SystemExit:
         sys.exit(1)
 
 
