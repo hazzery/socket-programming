@@ -71,9 +71,9 @@ class Server(CommandLineApplication):
 
                 if message_type == MessageType.READ:
                     response = MessageResponse(sender_name, self.messages)
-                    record, num_messages = response.to_bytes()
-                    connection_socket.send(response)
-                    print(f"{num_messages} message(s) delivered to {sender_name}")
+                    record = response.to_bytes()
+                    connection_socket.send(record)
+                    print(f"{response.num_messages} message(s) delivered to {sender_name}")
 
                 elif message_type == MessageType.CREATE:
                     if receiver_name not in self.messages:
