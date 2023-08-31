@@ -21,7 +21,7 @@ class Client(CommandLineApplication):
         super().__init__(OrderedDict(host_name=str,
                                      port_number=PortNumber,
                                      user_name=str,
-                                     message_type=MessageType))
+                                     message_type=MessageType.from_str))
         try:
             self.host_name, self.port_number, self.user_name, self.message_type \
                 = self.parse_arguments(arguments)
