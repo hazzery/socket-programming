@@ -70,7 +70,7 @@ class Client(CommandLineApplication):
                 connection_socket.settimeout(1)
                 connection_socket.connect((self.host_name, self.port_number))
                 connection_socket.send(record)
-                if self.message_type == MessageType.CREATE:
+                if self.message_type == MessageType.READ:
                     response = connection_socket.recv(4096)
                     response = MessageResponse(response)
 
