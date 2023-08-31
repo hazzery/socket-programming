@@ -13,7 +13,7 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
         self.parameters = parameters
 
     @property
-    def usage_prompt(self):
+    def usage_prompt(self) -> str:
         """
         :return: The usage prompt for the command line application
         """
