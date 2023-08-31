@@ -13,21 +13,21 @@ class MessageResponse(Record):
         :param messages:
         :param receiver_name: The string name of the client requesting their messages
         """
-        num_messages = len(messages.get(receiver_name, []))
+        self.num_messages = len(messages.get(receiver_name, []))
         more_messages = False
-        if num_messages > 255:
+        if self.num_messages > 255:
             more_messages = True
-            num_messages = 255
+            self.num_messages = 255
 
         self.record = bytearray(5)
 
         self.record[0] = Record.MAGIC_NUMBER >> 8
         self.record[1] = Record.MAGIC_NUMBER & 0xFF
         self.record[2] = MessageType.RESPONSE.value
-        self.record[3] = num_messages
+        self.record[3] = self.num_messages
         self.record[4] = int(more_messages)
 
-        for i in range(num_messages):
+        for i in range(self.num_messages):
             sender, message = messages[receiver_name][i]
 
             self.record.append(len(sender.encode()))
@@ -39,7 +39,7 @@ class MessageResponse(Record):
             print(f"{sender}'s message: \"{message.decode()}\" "
                   f"has been delivered to {receiver_name}")
 
-        del messages.get(receiver_name, [])[:num_messages]
+        del messages.get(receiver_name, [])[:self.num_messages]
 
     def to_bytes(self) -> bytes:
         """
