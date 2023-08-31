@@ -5,6 +5,7 @@ Harrison Parkes (hpa101) 94852440
 """
 from collections import OrderedDict
 from typing import Optional
+import logging
 import socket
 import sys
 
@@ -26,7 +27,10 @@ class Client(CommandLineApplication):
             self.host_name, self.port_number, self.user_name, self.message_type \
                 = self.parse_arguments(arguments)
         except (TypeError, ValueError) as error:
-            raise error
+            logging.error(error)
+            print(self.usage_prompt)
+            print(error)
+            raise SystemExit
 
         self.receiver_name = ""
         self.message = ""
@@ -43,18 +47,18 @@ class Client(CommandLineApplication):
         try:
             socket.getaddrinfo(host_name, int(port_number))
         except socket.gaierror as error:
-            # log error
-            print(self.usage_prompt)
-            raise ValueError("Invalid host name")
+            logging.error(error)
+            raise ValueError("Invalid host name, must be an IP address, domain name,"
+                             " or \"localhost\"")
 
         if len(user_name.encode()) > 255:
-            print(self.usage_prompt)
+            logging.error("Username consumes more than 255 bytes")
             raise ValueError("Username must be at most 255 bytes")
 
         if message_type == MessageType.RESPONSE:
-            print(self.usage_prompt)
-            raise ValueError(
-                "Message type \"response\" not allowed, must be \"read\" or \"create\"")
+            logging.error("Message type 3 (response) found")
+            raise ValueError("Message type \"response\" not allowed,"
+                             " must be \"read\" or \"create\"")
 
         return host_name, port_number, user_name, message_type
 
@@ -75,13 +79,13 @@ class Client(CommandLineApplication):
                     response = MessageResponse(response)
 
         except ConnectionRefusedError as error:
-            # log error
-            print("Connection refused by server, likely due to invalid port number")
-            raise error
+            logging.error(error)
+            print("Connection refused, likely due to invalid port number")
+            raise SystemExit
         except socket.timeout as error:
-            # log error
+            logging.error(error)
             print("Connection timed out, likely due to invalid host name")
-            raise error
+            raise SystemExit
 
         print(f"{self.message_type.name.lower()} record sent as {self.user_name}")
         return response
@@ -114,5 +118,9 @@ class Client(CommandLineApplication):
 
 
 if __name__ == '__main__':
-    client = Client(sys.argv[1:])
-    client.run()
+    try:
+        logging.basicConfig(filename="client.log", level=logging.DEBUG)
+        client = Client(sys.argv[1:])
+        client.run()
+    except SystemExit as error:
+        sys.exit(1)
