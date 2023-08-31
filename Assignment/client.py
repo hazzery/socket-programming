@@ -117,10 +117,14 @@ class Client(CommandLineApplication):
             self.read_message_response(response)
 
 
-if __name__ == '__main__':
+def main():
     try:
         logging.basicConfig(filename="client.log", level=logging.DEBUG)
         client = Client(sys.argv[1:])
         client.run()
     except SystemExit as error:
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
