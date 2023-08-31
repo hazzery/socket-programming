@@ -28,8 +28,8 @@ class Client(CommandLineApplication):
         except (TypeError, ValueError) as error:
             raise error
 
-        self.receiver_name = None
-        self.message = None
+        self.receiver_name = ""
+        self.message = ""
 
     def parse_arguments(self, arguments: list[str]) -> tuple[str, PortNumber, str, MessageType]:
         """
