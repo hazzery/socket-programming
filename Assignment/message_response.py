@@ -71,7 +71,7 @@ class MessageResponse(Record):
         self.more_messages = bool(record[4])
         self.messages: list = []
 
-        index = 0
+        index = 5
         for _ in range(num_messages):
             sender_name_length = record[index]
             index += 1
