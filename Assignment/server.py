@@ -23,7 +23,10 @@ class Server(CommandLineApplication):
         try:
             self.port_number, = self.parse_arguments(arguments)
         except (TypeError, ValueError) as error:
-            raise error
+            logging.error(error)
+            print(self.usage_prompt)
+            print(error)
+            raise SystemExit
 
         self.server_address = ("localhost", self.port_number)
         self.messages: dict[str, list[tuple[str, bytes]]] = dict()
@@ -48,10 +51,9 @@ class Server(CommandLineApplication):
                     self.run_server(welcoming_socket)
 
         except OSError as error:
-            # log error
-            print(error)
+            logging.error(error)
             print("Error binding socket on provided port")
-            raise error
+            raise SystemExit
 
     def run_server(self, welcoming_socket: socket.socket):
         """
@@ -84,13 +86,21 @@ class Server(CommandLineApplication):
                           f"\"{message.decode()}\" to {receiver_name}")
 
         except socket.timeout as error:
-            print(error)
+            logging.error(error)
             print("Timed out while waiting for message request")
         except ValueError as error:
-            print(error)
+            logging.error(error)
             print("Message request discarded")
 
 
+def main():
+    logging.basicConfig(filename="server.log", level=logging.DEBUG)
+    try:
+        server = Server(sys.argv[1:])
+        server.run()
+    except SystemExit:
+        sys.exit(1)
+
+
 if __name__ == "__main__":
-    server = Server(sys.argv[1:])
-    server.run()
+    main()
