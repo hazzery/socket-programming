@@ -27,19 +27,12 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
         """
 
         if len(arguments) != len(self.parameters):
-            print(self.usage_prompt)
-            raise ValueError("Invalid number of arguments")
+            raise ValueError(f"Invalid number of arguments, must be {len(arguments)}")
 
         typed_arguments = []
         for argument, (parameter, parameter_type) in zip(arguments, self.parameters.items()):
-            try:
-                argument = parameter_type(argument)
-                typed_arguments.append(argument)
-            except (TypeError, ValueError) as error:
-                # log error
-                print(self.usage_prompt)
-                raise TypeError(f"Invalid {parameter}! Must conform to {parameter_type}.") from None
-
+            argument = parameter_type(argument)
+            typed_arguments.append(argument)
 
         return tuple(typed_arguments)
 
