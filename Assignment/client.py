@@ -118,8 +118,8 @@ class Client(CommandLineApplication):
 
 
 def main():
+    logging.basicConfig(filename="client.log", level=logging.DEBUG)
     try:
-        logging.basicConfig(filename="client.log", level=logging.DEBUG)
         client = Client(sys.argv[1:])
         client.run()
     except SystemExit as error:
