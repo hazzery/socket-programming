@@ -3,6 +3,7 @@ Server side program
 Run with `python3 server.py <port number>`
 """
 from collections import OrderedDict
+from datetime import datetime
 import logging
 import socket
 import sys
@@ -94,7 +95,7 @@ class Server(CommandLineApplication):
 
 
 def main():
-    logging.basicConfig(filename="server.log", level=logging.DEBUG)
+    logging.basicConfig(filename=f"logs/server/{datetime.now()}.log")
     try:
         server = Server(sys.argv[1:])
         server.run()

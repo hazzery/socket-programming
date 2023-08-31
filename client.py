@@ -3,6 +3,7 @@ Client side program
 Run with `python3 client.py <host name> <port number> <username> <message type>`
 """
 from collections import OrderedDict
+from datetime import datetime
 from typing import Optional
 import logging
 import socket
@@ -118,7 +119,7 @@ class Client(CommandLineApplication):
 
 
 def main():
-    logging.basicConfig(filename="client.log", level=logging.DEBUG)
+    logging.basicConfig(filename=f"logs/client/{datetime.now()}.log")
     try:
         client = Client(sys.argv[1:])
         client.run()
