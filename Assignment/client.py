@@ -41,7 +41,7 @@ class Client(CommandLineApplication):
         host_name, port_number, user_name, message_type = super().parse_arguments(arguments)
 
         try:
-            socket.getaddrinfo(host_name, port_number)
+            socket.getaddrinfo(host_name, int(port_number))
         except socket.gaierror as error:
             # log error
             print(self.usage_prompt)
