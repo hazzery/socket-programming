@@ -68,7 +68,7 @@ class Server(CommandLineApplication):
         try:
             with connection_socket:
                 record = connection_socket.recv(4096)
-                request = MessageRequest(record)
+                request = MessageRequest.from_bytes(record)
                 message_type, sender_name, receiver_name, message = request.decode()
 
                 if message_type == MessageType.READ:
