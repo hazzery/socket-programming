@@ -1,7 +1,6 @@
 """
-Server side program for COSC264 socket programming assignment
-
-Harrison Parkes (hpa101) 94852440
+Server side program
+Run with `python3 server.py <port number>`
 """
 from collections import OrderedDict
 import logging

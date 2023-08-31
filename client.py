@@ -1,7 +1,6 @@
 """
-Client side program for COSC264 socket programming assignment
-
-Harrison Parkes (hpa101) 94852440
+Client side program
+Run with `python3 client.py <host name> <port number> <username> <message type>`
 """
 from collections import OrderedDict
 from typing import Optional
