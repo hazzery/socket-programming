@@ -13,4 +13,7 @@ class MessageType(Enum):
         :param string: The string to convert
         :return: The message type
         """
-        return MessageType[string.upper()]
+        try:
+            return MessageType[string.upper()]
+        except KeyError:
+            raise ValueError(f"Invalid message type: {string}, must be \"read\" or \"create\"")
