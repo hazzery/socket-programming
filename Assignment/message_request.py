@@ -1,6 +1,6 @@
 from pythonlangutil.overload import Overload, signature
-from .message_type import MessageType
-from .record import Record
+from message_type import MessageType
+from record import Record
 
 
 class MessageRequest(Record):

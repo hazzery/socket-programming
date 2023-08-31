@@ -8,11 +8,11 @@ import logging
 import socket
 import sys
 
-from Assignment.message_request import MessageRequest
-from Assignment.message_response import MessageResponse
-from .command_line_application import CommandLineApplication
-from .message_type import MessageType
-from .port_number import PortNumber
+from command_line_application import CommandLineApplication
+from message_response import MessageResponse
+from message_request import MessageRequest
+from message_type import MessageType
+from port_number import PortNumber
 
 
 class Server(CommandLineApplication):
