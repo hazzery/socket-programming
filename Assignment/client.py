@@ -103,6 +103,9 @@ class Client(CommandLineApplication):
             print("More messages available, please send another request")
 
     def run(self):
+        if self.message_type == MessageType.CREATE:
+            self.receiver_name = input("Enter the name of the receiver: ")
+            self.message = input("Enter the message to be sent: ")
         request = MessageRequest(self.message_type, self.user_name,
                                  self.receiver_name, self.message)
         response = self.send_message_request(request)
