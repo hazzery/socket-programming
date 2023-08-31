@@ -35,7 +35,7 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
             try:
                 argument = parameter_type(argument)
                 typed_arguments.append(argument)
-            except ValueError as error:
+            except (TypeError, ValueError) as error:
                 # log error
                 print(self.usage_prompt)
                 raise TypeError(f"{parameter} has invalid type {type(argument)}")
