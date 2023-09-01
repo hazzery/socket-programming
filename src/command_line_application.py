@@ -1,11 +1,13 @@
 from collections import OrderedDict
+from typing import Callable, Any
+import logging
 import abc
 
 
 class CommandLineApplication(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def __init__(self, parameters: OrderedDict[str, type]):
+    def __init__(self, parameters: OrderedDict[str, Callable[[str], Any]]):
         """
         Initialises the command line application.
         :param parameters: A dictionary containing the parameters for the command line application
@@ -19,22 +21,27 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
         """
         return "Usage: python3 %s" % " ".join(self.parameters)
 
-    @abc.abstractmethod
-    def parse_arguments(self, arguments: list[str]) -> tuple:
+    def parse_arguments(self, arguments: list[str]) -> list[Any]:
         """
         Parses the command line arguments, ensuring they are valid.
         :param arguments: The command line arguments
         """
 
-        if len(arguments) != len(self.parameters):
-            raise ValueError(f"Invalid number of arguments, must be {len(arguments)}")
+        parsed_arguments = []
+        try:
+            if len(arguments) != len(self.parameters):
+                raise ValueError(f"Invalid number of arguments, must be {len(arguments)}")
 
-        typed_arguments = []
-        for argument, (parameter, parameter_type) in zip(arguments, self.parameters.items()):
-            argument = parameter_type(argument)
-            typed_arguments.append(argument)
+            for argument, (parameter, parser) in zip(arguments, self.parameters.items()):
+                argument = parser(argument)
+                parsed_arguments.append(argument)
+        except (TypeError, ValueError) as error:
+            logging.error(error)
+            print(self.usage_prompt)
+            print(error)
+            raise SystemExit
 
-        return tuple(typed_arguments)
+        return parsed_arguments
 
     @abc.abstractmethod
     def run(self):

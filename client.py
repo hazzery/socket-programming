@@ -19,48 +19,50 @@ from src.port_number import PortNumber
 class Client(CommandLineApplication):
 
     def __init__(self, arguments: list[str]):
-        super().__init__(OrderedDict(host_name=str,
+        """
+        Initialises the client with a specified host name, port number, username, and message type.
+        """
+        super().__init__(OrderedDict(host_name=self.parse_hostname,
                                      port_number=PortNumber,
-                                     user_name=str,
+                                     user_name=self.parse_username,
                                      message_type=MessageType.from_str))
-        try:
-            self.host_name, self.port_number, self.user_name, self.message_type \
-                = self.parse_arguments(arguments)
-        except (TypeError, ValueError) as error:
-            logging.error(error)
-            print(self.usage_prompt)
-            print(error)
-            raise SystemExit
+
+        self.host_name, self.port_number, self.user_name, self.message_type =\
+            self.parse_arguments(arguments)
 
         self.receiver_name = ""
         self.message = ""
 
-    def parse_arguments(self, arguments: list[str]) -> tuple[str, PortNumber, str, MessageType]:
+    @staticmethod
+    def parse_hostname(host_name: str) -> str:
         """
-        Parses the command line arguments, ensuring they are valid.
-        :param arguments: The command line arguments as a list of strings
-        :return: A tuple containing the host name, port number, username, and message type
+        Parses the host name, ensuring it is valid.
+        :param host_name: String representing the host name
+        :return: String of the host name
+        :raises ValueError: If the host name is invalid
         """
-
-        host_name, port_number, user_name, message_type = super().parse_arguments(arguments)
-
         try:
-            socket.getaddrinfo(host_name, int(port_number))
+            socket.getaddrinfo(host_name, 1024)
         except socket.gaierror as error:
             logging.error(error)
             raise ValueError("Invalid host name, must be an IP address, domain name,"
                              " or \"localhost\"")
 
+        return host_name
+
+    @staticmethod
+    def parse_username(user_name: str) -> str:
+        """
+        Parses the username, ensuring it is valid.
+        :param user_name: String representing the username
+        :return: String of the username
+        :raises ValueError: If the username is invalid
+        """
         if len(user_name.encode()) > 255:
             logging.error("Username consumes more than 255 bytes")
-            raise ValueError("Username must be at most 255 bytes")
+            raise ValueError("Username must consume at most 255 bytes")
 
-        if message_type == MessageType.RESPONSE:
-            logging.error("Message type 3 (response) found")
-            raise ValueError("Message type \"response\" not allowed,"
-                             " must be \"read\" or \"create\"")
-
-        return host_name, port_number, user_name, message_type
+        return user_name
 
     def send_message_request(self, request: MessageRequest) -> Optional[MessageResponse]:
         """

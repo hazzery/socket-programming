@@ -18,26 +18,14 @@ from src.port_number import PortNumber
 class Server(CommandLineApplication):
 
     def __init__(self, arguments: list[str]):
+        """
+        Initialises the server with a specified port number.
+        """
         super().__init__(OrderedDict(port_number=PortNumber))
-
-        try:
-            self.port_number, = self.parse_arguments(arguments)
-        except (TypeError, ValueError) as error:
-            logging.error(error)
-            print(self.usage_prompt)
-            print(error)
-            raise SystemExit
+        self.port_number, = self.parse_arguments(arguments)
 
         self.server_address = ("localhost", self.port_number)
         self.messages: dict[str, list[tuple[str, bytes]]] = dict()
-
-    def parse_arguments(self, arguments: list[str]) -> tuple[PortNumber]:
-        """
-        Parses the command line arguments, ensuring they are valid.
-        :param arguments: The command line arguments as a list of strings
-        :return: A tuple containing the port number
-        """
-        return super().parse_arguments(arguments)
 
     def run(self):
         try:
