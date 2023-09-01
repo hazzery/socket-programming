@@ -26,7 +26,6 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
         Parses the command line arguments, ensuring they are valid.
         :param arguments: The command line arguments
         """
-
         parsed_arguments = []
         try:
             if len(arguments) != len(self.parameters):
