@@ -6,7 +6,7 @@ client requests to test the server's ability to correctly set the `more_messages
 
 import subprocess as sp
 
-with open("test/resources/names.txt") as names_file:
+with open("tests/resources/names.txt", encoding="utf8") as names_file:
     names = names_file.readlines()
 
 for name in names:
