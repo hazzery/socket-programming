@@ -13,28 +13,28 @@ class TestMessageType(unittest.TestCase):
     """
 
     def test_read_lowercase(self):
-        self.assertEquals(MessageType.READ, MessageType.from_str("read"))
         """Test that read is parsed correctly."""
+        self.assertEqual(MessageType.READ, MessageType.from_str("read"))
 
     def test_read_uppercase(self):
-        self.assertEquals(MessageType.READ, MessageType.from_str("READ"))
         """Test that READ is parsed correctly."""
+        self.assertEqual(MessageType.READ, MessageType.from_str("READ"))
 
     def test_create_lowercase(self):
-        self.assertEquals(MessageType.CREATE, MessageType.from_str("create"))
         """Test that create is parsed correctly."""
+        self.assertEqual(MessageType.CREATE, MessageType.from_str("create"))
 
     def test_create_uppercase(self):
-        self.assertEquals(MessageType.CREATE, MessageType.from_str("CREATE"))
         """Test that CREATE is parsed correctly."""
+        self.assertEqual(MessageType.CREATE, MessageType.from_str("CREATE"))
 
     def test_response_lowercase(self):
-        self.assertEquals(MessageType.RESPONSE, MessageType.from_str("response"))
         """Test that response is parsed correctly."""
+        self.assertEqual(MessageType.RESPONSE, MessageType.from_str("response"))
 
     def test_response_uppercase(self):
-        self.assertEquals(MessageType.RESPONSE, MessageType.from_str("RESPONSE"))
         """Test that RESPONSE is parsed correctly."""
+        self.assertEqual(MessageType.RESPONSE, MessageType.from_str("RESPONSE"))
 
     def test_invalid(self):
         """Test that invalid input raises a ValueError."""

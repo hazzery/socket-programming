@@ -21,12 +21,12 @@ class TestPortNumber(unittest.TestCase):
         self.assertRaises(ValueError, PortNumber, str(PortNumber.MINIMUM - 1))
 
     def test_lower_bound(self):
-        self.assertEquals(PortNumber.MINIMUM, PortNumber(str(PortNumber.MINIMUM)))
         """Test that input at the lower bound is accepted."""
+        self.assertEqual(PortNumber.MINIMUM, PortNumber(str(PortNumber.MINIMUM)))
 
     def test_upper_bound(self):
-        self.assertEquals(PortNumber.MAXIMUM, PortNumber(str(PortNumber.MAXIMUM)))
         """Test that input at the upper bound is accepted."""
+        self.assertEqual(PortNumber.MAXIMUM, PortNumber(str(PortNumber.MAXIMUM)))
 
     def test_above_bound(self):
         """Test that input above the upper bound raises a ValueError."""
