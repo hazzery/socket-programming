@@ -27,6 +27,8 @@ class Server(CommandLineApplication):
         Initialises the server with a specified port number.
         """
         super().__init__(OrderedDict(port_number=PortNumber))
+        # pylint thinks that self.parse_arguments is only capable of returning an empty list
+        # pylint: disable=unbalanced-tuple-unpacking
         self.port_number, = self.parse_arguments(arguments)
 
         self.hostname = "localhost"

@@ -30,6 +30,8 @@ class Client(CommandLineApplication):
                                      user_name=self.parse_username,
                                      message_type=MessageType.from_str))
 
+        # pylint thinks that self.parse_arguments is only capable of returning an empty list
+        # pylint: disable=unbalanced-tuple-unpacking
         self.host_name, self.port_number, self.user_name, self.message_type =\
             self.parse_arguments(arguments)
 
