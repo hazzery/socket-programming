@@ -1,6 +1,6 @@
 """
 Client side program
-Run with `python3 client.py <host name> <port number> <username> <message type>`
+Run with `python3 client.py <host name> <port number> <username> <message_type>`
 """
 from collections import OrderedDict
 from datetime import datetime
@@ -29,6 +29,9 @@ class Client(CommandLineApplication):
 
         self.host_name, self.port_number, self.user_name, self.message_type =\
             self.parse_arguments(arguments)
+
+        logging.info(f"Client for {self.host_name} port {self.port_number} created by"
+                     f" {self.user_name} to send {self.message_type.name.lower()} request")
 
         self.receiver_name = ""
         self.message = ""
@@ -89,6 +92,7 @@ class Client(CommandLineApplication):
             print("Connection timed out, likely due to invalid host name")
             raise SystemExit
 
+        logging.info(f"{self.message_type.name.lower()} record sent as {self.user_name}")
         print(f"{self.message_type.name.lower()} record sent as {self.user_name}")
         return response
 
@@ -101,17 +105,21 @@ class Client(CommandLineApplication):
         messages, more_messages = response.decode()
 
         for sender, message in messages:
+            logging.info(f"Received {sender}'s message \"{message}\"")
             print(f"Message from {sender}:\n{message}\n")
 
         if len(messages) == 0:
+            logging.info("Response contained no messages")
             print("No messages available")
         elif more_messages:
+            logging.info(f"Server has more messages available for this user")
             print("More messages available, please send another request")
 
     def run(self):
         if self.message_type == MessageType.CREATE:
             self.receiver_name = input("Enter the name of the receiver: ")
             self.message = input("Enter the message to be sent: ")
+            logging.info(f"User specified message to {self.receiver_name}: \"{self.message}\"")
 
         request = MessageRequest(self.message_type, self.user_name,
                                  self.receiver_name, self.message)
@@ -121,7 +129,10 @@ class Client(CommandLineApplication):
 
 
 def main():
-    logging.basicConfig(filename=f"logs/client/{datetime.now()}.log")
+    logging.basicConfig(level=logging.INFO,
+                        filename=f"logs/client/{datetime.now()}.log",
+                        format="%(levelname)s: %(message)s")
+
     try:
         client = Client(sys.argv[1:])
         client.run()
