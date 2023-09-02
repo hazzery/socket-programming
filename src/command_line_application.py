@@ -31,7 +31,7 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
         """
         :return: The usage prompt for the command line application
         """
-        return "Usage: python3 %s" % " ".join(self.parameters)
+        return f"Usage: python3 {' '.join(self.parameters)}"
 
     def parse_arguments(self, arguments: list[str]) -> list[Any]:
         """
