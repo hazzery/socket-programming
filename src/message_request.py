@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 
 from .message_type import MessageType
@@ -13,7 +14,7 @@ class MessageRequest(Record):
         :param message_type: The type of the request (READ or CREATE)
         :param user_name: The name of the user sending the request
         :param receiver_name: The name of the message recipient
-        :param message: The message to be sent
+        :param message: The string message to be sent
         """
         self.message_type = message_type
         self.user_name = user_name
@@ -26,6 +27,12 @@ class MessageRequest(Record):
         Returns the message request packet
         :return: A byte array holding the message request
         """
+        if self.message_type == MessageType.READ:
+            logging.info(f"Creating READ request from {self.user_name}")
+        else:
+            logging.info(f"Creating CREATE request to send {self.receiver_name} the message"
+                         f" \"{self.message}\" from {self.user_name}")
+
         self.record[0] = Record.MAGIC_NUMBER >> 8
         self.record[1] = Record.MAGIC_NUMBER & 0xFF
         self.record[2] = self.message_type.value

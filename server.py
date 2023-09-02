@@ -33,6 +33,7 @@ class Server(CommandLineApplication):
             with socket.socket() as welcoming_socket:
                 welcoming_socket.bind(self.server_address)  # Bind the socket to the port
                 welcoming_socket.listen(5)  # A maximum, of five unprocessed connections are allowed
+                logging.info("Server started on %s port %s" % self.server_address)
                 print("starting up on %s port %s" % self.server_address)
 
                 while True:
@@ -51,6 +52,7 @@ class Server(CommandLineApplication):
         connection_socket, client_address = welcoming_socket.accept()
         connection_socket.settimeout(1)
 
+        logging.info(f"New client connection from {client_address}")
         print("New client connection from", client_address)
 
         try:
@@ -64,6 +66,7 @@ class Server(CommandLineApplication):
                     record = response.to_bytes()
                     connection_socket.send(record)
                     del self.messages.get(sender_name, [])[:response.num_messages]
+                    logging.info(f"{response.num_messages} message(s) delivered to {sender_name}")
                     print(f"{response.num_messages} message(s) delivered to {sender_name}")
 
                 elif message_type == MessageType.CREATE:
@@ -71,6 +74,8 @@ class Server(CommandLineApplication):
                         self.messages[receiver_name] = []
 
                     self.messages[receiver_name].append((sender_name, message))
+                    logging.info(f"Storing {sender_name}'s message to {receiver_name}:"
+                                 f" \"{message.decode()}\"")
                     print(f"{sender_name} sends the message "
                           f"\"{message.decode()}\" to {receiver_name}")
 
@@ -83,12 +88,18 @@ class Server(CommandLineApplication):
 
 
 def main():
-    logging.basicConfig(filename=f"logs/server/{datetime.now()}.log")
+    logging.basicConfig(level=logging.INFO,
+                        filename=f"logs/server/{datetime.now()}.log",
+                        format='%(asctime)s - %(levelname)s: %(message)s',
+                        datefmt='%H:%M:%S')
     try:
         server = Server(sys.argv[1:])
         server.run()
     except SystemExit:
         sys.exit(1)
+    except KeyboardInterrupt:
+        print("Server shut down")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

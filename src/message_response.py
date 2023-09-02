@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 
 from .message_type import MessageType
@@ -22,6 +23,8 @@ class MessageResponse(Record):
         Returns the message response packet
         :return: A byte array holding the message response
         """
+        logging.info(f"Creating message response for {self.num_messages} message(s)")
+
         self.record[0] = Record.MAGIC_NUMBER >> 8
         self.record[1] = Record.MAGIC_NUMBER & 0xFF
         self.record[2] = MessageType.RESPONSE.value
@@ -34,6 +37,7 @@ class MessageResponse(Record):
             self.record.append(len(message) & 0xFF)
             self.record.extend(sender.encode())
             self.record.extend(message)
+            logging.info(f"Encoded message from {sender}: \"{message.decode()}\"")
 
         return bytes(self.record)
 
@@ -72,6 +76,7 @@ class MessageResponse(Record):
             message = record[index:index + message_length].decode()
             index += message_length
 
+            logging.info(f"Decoded message from {sender_name}: \"{message}\"")
             messages.append((sender_name, message))
 
         response = cls(messages)
