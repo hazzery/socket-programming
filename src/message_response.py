@@ -62,8 +62,8 @@ class MessageResponse(Record):
 
         try:
             message_type = MessageType(record[2])
-        except ValueError:
-            raise ValueError("Invalid message type when decoding message response")
+        except ValueError as error:
+            raise ValueError("Invalid message type when decoding message response") from error
         if message_type != MessageType.RESPONSE:
             raise ValueError(f"Message type {message_type} found when decoding message response, "
                              f"expected RESPONSE")

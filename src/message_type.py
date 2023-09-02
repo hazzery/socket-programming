@@ -24,5 +24,6 @@ class MessageType(Enum):
         """
         try:
             return MessageType[string.upper()]
-        except KeyError:
-            raise ValueError(f"Invalid message type: {string}, must be \"read\" or \"create\"")
+        except KeyError as error:
+            raise ValueError(f"Invalid message type: {string}, must be \"read\" or \"create\"")\
+                from error

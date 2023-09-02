@@ -50,7 +50,7 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
             logging.error(error)
             print(self.usage_prompt)
             print(error)
-            raise SystemExit
+            raise SystemExit from error
 
         return parsed_arguments
 

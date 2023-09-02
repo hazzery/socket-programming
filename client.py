@@ -53,7 +53,7 @@ class Client(CommandLineApplication):
         except socket.gaierror as error:
             logging.error(error)
             raise ValueError("Invalid host name, must be an IP address, domain name,"
-                             " or \"localhost\"")
+                             " or \"localhost\"") from error
 
         return host_name
 
@@ -94,11 +94,11 @@ class Client(CommandLineApplication):
         except ConnectionRefusedError as error:
             logging.error(error)
             print("Connection refused, likely due to invalid port number")
-            raise SystemExit
+            raise SystemExit from error
         except socket.timeout as error:
             logging.error(error)
             print("Connection timed out, likely due to invalid host name")
-            raise SystemExit
+            raise SystemExit from error
 
         logging.info("%s record sent as %s", self.message_type.name.lower(), self.user_name)
         print(f"{self.message_type.name.lower()} record sent as {self.user_name}")

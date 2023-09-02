@@ -48,7 +48,7 @@ class Server(CommandLineApplication):
         except OSError as error:
             logging.error(error)
             print("Error binding socket on provided port")
-            raise SystemExit
+            raise SystemExit from error
 
     def run_server(self, welcoming_socket: socket.socket):
         """
