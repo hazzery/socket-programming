@@ -31,4 +31,3 @@ class TestPortNumber(unittest.TestCase):
     def test_above_bound(self):
         """Test that input above the upper bound raises a ValueError."""
         self.assertRaises(ValueError, PortNumber, str(PortNumber.MAXIMUM + 1))
-
