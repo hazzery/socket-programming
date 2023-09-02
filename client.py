@@ -17,6 +17,9 @@ from src.port_number import PortNumber
 
 
 class Client(CommandLineApplication):
+    """
+    A client side program that sends and receives messages to and from the server.
+    """
 
     def __init__(self, arguments: list[str]):
         """
@@ -133,6 +136,9 @@ class Client(CommandLineApplication):
 
 
 def main():
+    """
+    Runs the client side of the program
+    """
     logging.basicConfig(level=logging.INFO,
                         filename=f"logs/client/{datetime.now()}.log",
                         format="%(levelname)s: %(message)s")

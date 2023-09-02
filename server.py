@@ -16,6 +16,11 @@ from src.port_number import PortNumber
 
 
 class Server(CommandLineApplication):
+    """
+    A server side program that receives messages from clients and stores them.
+
+    The server can be run with `python3 server.py <port number>`.
+    """
 
     def __init__(self, arguments: list[str]):
         """
@@ -88,6 +93,9 @@ class Server(CommandLineApplication):
 
 
 def main():
+    """
+    Runs the server side of the program
+    """
     logging.basicConfig(level=logging.INFO,
                         filename=f"logs/server/{datetime.now()}.log",
                         format='%(asctime)s - %(levelname)s: %(message)s',

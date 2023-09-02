@@ -1,3 +1,10 @@
+"""
+This module contains the CommandLineApplication class,
+an abstract class for command line applications.
+
+It is implemented by the Client and Server classes.
+"""
+
 from collections import OrderedDict
 from typing import Callable, Any
 import logging
@@ -5,6 +12,11 @@ import abc
 
 
 class CommandLineApplication(metaclass=abc.ABCMeta):
+    """
+    An abstract class for command line applications.
+
+    Defines the usage prompt and the method for parsing command line arguments.
+    """
 
     @abc.abstractmethod
     def __init__(self, parameters: OrderedDict[str, Callable[[str], Any]]):
@@ -44,4 +56,7 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def run(self):
+        """
+        Run the command line application.
+        """
         raise NotImplementedError

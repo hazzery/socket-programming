@@ -1,3 +1,9 @@
+"""
+This module contains the MessageResponse class, which is used to encode and decode
+message response packets.
+"""
+
+from typing import Union
 import logging
 from typing import Union
 
@@ -6,6 +12,9 @@ from .record import Record
 
 
 class MessageResponse(Record):
+    """
+    A class for encoding and decoding message response packets
+    """
 
     def __init__(self, messages: list[tuple[str, Union[str, bytes]]]):
         """

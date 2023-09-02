@@ -1,7 +1,16 @@
+"""
+Message type module
+Defines MessageType enum
+"""
+
 from enum import Enum
 
 
 class MessageType(Enum):
+    """
+    An enum for message types
+    """
+
     READ = 1
     CREATE = 2
     RESPONSE = 3

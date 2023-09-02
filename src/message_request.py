@@ -1,3 +1,9 @@
+"""
+Message request module
+This module contains the MessageRequest class which is used to encode and decode
+message request packets.
+"""
+
 import logging
 from typing import Union
 
@@ -6,6 +12,16 @@ from .record import Record
 
 
 class MessageRequest(Record):
+    """
+    The MessageRequest class is used to encode and decode message request packets.
+
+    Usage:
+        message_request = MessageRequest(MessageType.CREATE, "sender_name", "receiver_name", "Hi")
+        record = message_request.to_bytes()
+
+        message_request = MessageRequest.from_record(record)
+        message_type, sender_name, receiver_name, message = message_request.decode()
+    """
 
     def __init__(self, message_type: MessageType, user_name: str,
                  receiver_name: str, message: Union[str, bytes]):

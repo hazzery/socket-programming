@@ -1,3 +1,9 @@
+"""
+This file is used to test the server with a large number of requests.
+It is not a unit test, but rather a script that executes a large number of
+client requests to test the server's ability to correctly set the `more_messages` flag.
+"""
+
 import subprocess as sp
 
 with open("test/resources/names.txt") as names_file:

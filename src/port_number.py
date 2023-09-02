@@ -1,4 +1,12 @@
+"""
+This module contains the port number type.
+"""
+
+
 class PortNumber(int):
+    """
+    Provides functionality to validate a port number.
+    """
 
     MINIMUM = 1024
     MAXIMUM = 64000
