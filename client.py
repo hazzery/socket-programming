@@ -8,6 +8,7 @@ from typing import Optional
 import logging
 import socket
 import sys
+import os
 
 from src.command_line_application import CommandLineApplication
 from src.message_response import MessageResponse
@@ -143,6 +144,7 @@ def main():
     """
     Runs the client side of the program
     """
+    os.makedirs(os.path.dirname("logs/client/"), exist_ok=True)
     logging.basicConfig(level=logging.INFO,
                         filename=f"logs/client/{datetime.now()}.log",
                         format="%(levelname)s: %(message)s")

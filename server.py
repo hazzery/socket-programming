@@ -7,6 +7,7 @@ from datetime import datetime
 import logging
 import socket
 import sys
+import os
 
 from src.command_line_application import CommandLineApplication
 from src.message_response import MessageResponse
@@ -31,7 +32,7 @@ class Server(CommandLineApplication):
         # pylint: disable=unbalanced-tuple-unpacking
         self.port_number, = self.parse_arguments(arguments)
 
-        self.hostname = "localhost"
+        self.hostname = "192.168.68.75"
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
     def run(self):
@@ -100,6 +101,7 @@ def main():
     """
     Runs the server side of the program
     """
+    os.makedirs(os.path.dirname("logs/server/"), exist_ok=True)
     logging.basicConfig(level=logging.INFO,
                         filename=f"logs/server/{datetime.now()}.log",
                         format='%(asctime)s - %(levelname)s: %(message)s',
