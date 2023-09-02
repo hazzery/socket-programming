@@ -5,7 +5,6 @@ message response packets.
 
 from typing import Union
 import logging
-from typing import Union
 
 from .message_type import MessageType
 from .record import Record
