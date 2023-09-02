@@ -12,20 +12,18 @@ with open("tests/resources/names.txt", encoding="utf8") as names_file:
 for name in names:
     client_program = ["python3", "client.py", "localhost", "1024", name, "create"]
 
-    process = sp.Popen(client_program, text=True, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
-    try:
-        output, errors = process.communicate(input="John\nHello")
-    except sp.TimeoutExpired:
-        process.kill()
-        output, errors = process.communicate()
-    print(output)
-    print(errors)
+    with sp.Popen(client_program, text=True, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE) \
+            as process:
+        try:
+            output, errors = process.communicate(input="John\nHello")
+        except sp.TimeoutExpired:
+            output, errors = process.communicate()
+        print(output)
+        print(errors)
 
-    process.terminate()
-
-read = sp.Popen(["python3", "client.py", "localhost", "1024", "John", "read"],
-                text=True, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
-output, errors = read.communicate()
+with sp.Popen(["python3", "client.py", "localhost", "1024", "John", "read"],
+              text=True, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE) as process:
+    output, errors = process.communicate()
 
 print(output)
 print(errors)
