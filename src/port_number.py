@@ -17,7 +17,7 @@ class PortNumber(int):
         except ValueError as error:
             raise TypeError("Port number must be an integer") from error
 
-        if not (cls.MINIMUM <= value <= cls.MAXIMUM):
+        if not cls.MINIMUM <= value <= cls.MAXIMUM:
             raise ValueError("Port number must be in the range 1024-64000 (inclusive)")
 
         return super(cls, cls).__new__(cls, value)
