@@ -44,10 +44,10 @@ class MessageRequest(Record):
         :return: A byte array holding the message request
         """
         if self.message_type == MessageType.READ:
-            logging.info(f"Creating READ request from {self.user_name}")
+            logging.info("Creating READ request from %s", self.user_name)
         else:
-            logging.info(f"Creating CREATE request to send {self.receiver_name} the message"
-                         f" \"{self.message}\" from {self.user_name}")
+            logging.info("Creating CREATE request to send %s the message \"%s\" from %s",
+                         self.receiver_name, self.message, self.user_name)
 
         self.record[0] = Record.MAGIC_NUMBER >> 8
         self.record[1] = Record.MAGIC_NUMBER & 0xFF

@@ -29,17 +29,18 @@ class Server(CommandLineApplication):
         super().__init__(OrderedDict(port_number=PortNumber))
         self.port_number, = self.parse_arguments(arguments)
 
-        self.server_address = ("localhost", self.port_number)
-        self.messages: dict[str, list[tuple[str, bytes]]] = dict()
+        self.hostname = "localhost"
+        self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
     def run(self):
         try:
             # Create a TCP/IP socket
             with socket.socket() as welcoming_socket:
-                welcoming_socket.bind(self.server_address)  # Bind the socket to the port
+                # Bind the socket to the port
+                welcoming_socket.bind((self.hostname, self.port_number))
                 welcoming_socket.listen(5)  # A maximum, of five unprocessed connections are allowed
-                logging.info("Server started on %s port %s" % self.server_address)
-                print("starting up on %s port %s" % self.server_address)
+                logging.info("Server started on %s port %s", self.hostname, self.port_number)
+                print(f"starting up on {self.hostname} port {self.port_number}")
 
                 while True:
                     self.run_server(welcoming_socket)
@@ -57,7 +58,7 @@ class Server(CommandLineApplication):
         connection_socket, client_address = welcoming_socket.accept()
         connection_socket.settimeout(1)
 
-        logging.info(f"New client connection from {client_address}")
+        logging.info("New client connection from %s", client_address)
         print("New client connection from", client_address)
 
         try:
@@ -71,7 +72,8 @@ class Server(CommandLineApplication):
                     record = response.to_bytes()
                     connection_socket.send(record)
                     del self.messages.get(sender_name, [])[:response.num_messages]
-                    logging.info(f"{response.num_messages} message(s) delivered to {sender_name}")
+                    logging.info("%s message(s) delivered to %s",
+                                 response.num_messages, sender_name)
                     print(f"{response.num_messages} message(s) delivered to {sender_name}")
 
                 elif message_type == MessageType.CREATE:
@@ -79,8 +81,8 @@ class Server(CommandLineApplication):
                         self.messages[receiver_name] = []
 
                     self.messages[receiver_name].append((sender_name, message))
-                    logging.info(f"Storing {sender_name}'s message to {receiver_name}:"
-                                 f" \"{message.decode()}\"")
+                    logging.info("Storing %s's message to %s: \"%s\"",
+                                 sender_name, receiver_name, message.decode())
                     print(f"{sender_name} sends the message "
                           f"\"{message.decode()}\" to {receiver_name}")
 
