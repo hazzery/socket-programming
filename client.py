@@ -71,7 +71,7 @@ class Client(CommandLineApplication):
             logging.error("Username is empty")
             raise ValueError("Username must not be empty")
 
-        elif len(user_name.encode()) > 255:
+        if len(user_name.encode()) > 255:
             logging.error("Username consumes more than 255 bytes")
             raise ValueError("Username must consume at most 255 bytes")
 
