@@ -37,5 +37,5 @@ class TestClient(unittest.TestCase):
         self.assertRaises(ValueError, Client.parse_username, "")
 
     def test_parse_username_too_long(self):
-        self.assertRaises(ValueError, Client.parse_username, "a" * 257)
         """Test that parsing a username that is too long raises a ValueError"""
+        self.assertRaises(ValueError, Client.parse_username, "a" * 256)
