@@ -7,7 +7,7 @@ import unittest
 from client import Client
 
 
-class TestPortNumber(unittest.TestCase):
+class TestClient(unittest.TestCase):
     """
     Test suite for Client class
     """
