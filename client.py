@@ -61,7 +61,11 @@ class Client(CommandLineApplication):
         :return: String of the username
         :raises ValueError: If the username is invalid
         """
-        if len(user_name.encode()) > 255:
+        if len(user_name) == 0:
+            logging.error("Username is empty")
+            raise ValueError("Username must not be empty")
+
+        elif len(user_name.encode()) > 255:
             logging.error("Username consumes more than 255 bytes")
             raise ValueError("Username must consume at most 255 bytes")
 
