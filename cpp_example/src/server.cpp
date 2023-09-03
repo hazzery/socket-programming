@@ -58,27 +58,41 @@ void Server::handle_client(int client_fd)
     uint8_t *read_buffer = new uint8_t[4096];
     int read_len = 0;
 
+    std::string client_name;
+
     while (true)
     {
-        // Read from the client socket
         read_len = read(client_fd, read_buffer, 4096);
 
-        // -1 => error, 0 => EOF
         if (read_len == -1 || read_len == 0)
         {
             break;
         }
 
         Message message = Message::decode(read_buffer, read_len);
-        std::cout << message.to_string() << std::endl;
+        client_name = message.sender;
+        client_map[client_name] = client_fd;
+
+        if (message.type == Type::CREATE)
+        {
+            std::cout << "Added client: " << client_name << std::endl;
+            continue;
+        }
+
+        // Forward the message to the intended receiver
+        if (client_map.count(message.receiver) != 0)
+        {
+            int receiver_fd = client_map[message.receiver];
+            write(receiver_fd, read_buffer, read_len);
+        }
     }
 
     delete[] read_buffer;
+    client_map.erase(client_name); // remove the client from the map
 
-    // Close the connection
+    std::cout << "Removed client: " << client_name << std::endl;
+
     close(client_fd);
-
-    std::cout << "Removed client_fd: " << client_fd << std::endl;
 }
 
 void Server::run_server()
@@ -94,11 +108,8 @@ void Server::run_server()
             continue;
         }
 
-        std::cout << "Added client_fd: " << client_fd << std::endl;
-
         std::thread client_thread(&Server::handle_client, this, client_fd);
         // Detach the thread, allowing it to clean up itself when done - no need to rejoin
         client_thread.detach();
-        client_threads.push_back(std::move(client_thread));
     }
 }

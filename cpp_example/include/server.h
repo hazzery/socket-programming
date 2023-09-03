@@ -3,6 +3,7 @@
 
 #include <string>
 #include <thread>
+#include <unordered_map>
 
 class Server
 {
@@ -20,6 +21,9 @@ private:
 
     int m_fd;
     std::thread m_server_thread;
+
+    // client name => fd
+    std::unordered_map<std::string, int> client_map;
 };
 
 #endif // __SERVER_H__
