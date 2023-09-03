@@ -12,6 +12,7 @@ public:
 
 private:
     void run_server();
+    void handle_client(int client_fd);
 
 private:
     const uint16_t m_port;

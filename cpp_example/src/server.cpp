@@ -1,11 +1,14 @@
 #include "server.h"
 #include "message.h"
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
+
 #include <iostream>
+#include <vector>
 
 Server::Server(const std::string &host, const uint16_t port) : m_host(host), m_port(port)
 {
@@ -50,21 +53,13 @@ Server::~Server()
     close(m_fd);
 }
 
-void Server::run_server()
+void Server::handle_client(int client_fd)
 {
-    int client_fd = accept(m_fd, nullptr, nullptr);
-
-    if (client_fd == -1)
-    {
-        return;
-    }
-
     uint8_t *read_buffer = new uint8_t[4096];
     int read_len = 0;
 
     while (true)
     {
-
         // Read from the client socket
         read_len = read(client_fd, read_buffer, 4096);
 
@@ -82,4 +77,28 @@ void Server::run_server()
 
     // Close the connection
     close(client_fd);
+
+    std::cout << "Removed client_fd: " << client_fd << std::endl;
+}
+
+void Server::run_server()
+{
+    std::vector<std::thread> client_threads;
+
+    while (true)
+    {
+        int client_fd = accept(m_fd, nullptr, nullptr);
+
+        if (client_fd == -1)
+        {
+            continue;
+        }
+
+        std::cout << "Added client_fd: " << client_fd << std::endl;
+
+        std::thread client_thread(&Server::handle_client, this, client_fd);
+        // Detach the thread, allowing it to clean up itself when done - no need to rejoin
+        client_thread.detach();
+        client_threads.push_back(std::move(client_thread));
+    }
 }
