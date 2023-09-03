@@ -13,6 +13,8 @@ import os
 from src.command_line_application import CommandLineApplication
 from src.message_response import MessageResponse
 from src.message_request import MessageRequest
+from src.login_response import LoginResponse
+from src.login_request import LoginRequest
 from src.message_type import MessageType
 from src.port_number import PortNumber
 
@@ -28,17 +30,14 @@ class Client(CommandLineApplication):
         """
         super().__init__(OrderedDict(host_name=self.parse_hostname,
                                      port_number=PortNumber,
-                                     user_name=self.parse_username,
-                                     message_type=MessageType.from_str))
+                                     user_name=self.parse_username))
 
         # pylint thinks that self.parse_arguments is only capable of returning an empty list
         # pylint: disable=unbalanced-tuple-unpacking
-        self.host_name, self.port_number, self.user_name, self.message_type =\
-            self.parse_arguments(arguments)
+        self.host_name, self.port_number, self.user_name = self.parse_arguments(arguments)
 
-        logging.info("Client for %s port %s created by %s to send %s request",
-                     self.host_name, self.port_number, self.user_name,
-                     self.message_type.name.lower())
+        logging.info("Client for %s port %s created by %s",
+                     self.host_name, self.port_number, self.user_name)
 
         self.receiver_name = ""
         self.message = ""
@@ -77,6 +76,32 @@ class Client(CommandLineApplication):
             raise ValueError("Username must consume at most 255 bytes")
 
         return user_name
+
+    def send_login_request(self) -> LoginResponse:
+        """
+        Sends a login request record to the server
+        """
+        request = LoginRequest(self.user_name)
+        record = request.to_bytes()
+        try:
+            with socket.socket() as connection_socket:
+                connection_socket.settimeout(1)
+                connection_socket.connect((self.host_name, self.port_number))
+                connection_socket.send(record)
+                response = connection_socket.recv(4096)
+                response = LoginResponse.from_record(response)
+        except ConnectionRefusedError as error:
+            logging.error(error)
+            print("Connection refused, likely due to invalid port number")
+            raise SystemExit from error
+        except socket.timeout as error:
+            logging.error(error)
+            print("Connection timed out, likely due to invalid host name")
+            raise SystemExit from error
+
+        logging.info("Received login response from server")
+
+        return response
 
     def send_message_request(self, request: MessageRequest) -> Optional[MessageResponse]:
         """
