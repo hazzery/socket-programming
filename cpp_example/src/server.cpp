@@ -1,4 +1,5 @@
 #include "server.h"
+#include "message.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -59,20 +60,22 @@ void Server::run_server()
     }
 
     uint8_t *read_buffer = new uint8_t[4096];
+    int read_len = 0;
 
     while (true)
     {
 
         // Read from the client socket
-        int ret = read(client_fd, read_buffer, 4096);
+        read_len = read(client_fd, read_buffer, 4096);
 
         // -1 => error, 0 => EOF
-        if (ret == -1 || ret == 0)
+        if (read_len == -1 || read_len == 0)
         {
             break;
         }
 
-        std::cout << (int)read_buffer << std::endl;
+        Message message = Message::decode(read_buffer, read_len);
+        std::cout << message.to_string() << std::endl;
     }
 
     delete[] read_buffer;
