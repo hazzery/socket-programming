@@ -4,9 +4,9 @@
 
 enum class Type
 {
-    READ = 1,
-    CREATE = 2,
-    RESPONSE = 3
+    READ,
+    CREATE,
+    RESPONSE
 };
 
 std::string type_to_str(Type type);
