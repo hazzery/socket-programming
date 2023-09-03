@@ -34,7 +34,7 @@ class Server(CommandLineApplication):
         # pylint: disable=unbalanced-tuple-unpacking
         self.port_number, = self.parse_arguments(arguments)
 
-        self.hostname = "192.168.68.75"
+        self.hostname = "localhost"
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
         self.users: dict[str, str] = {}
 
