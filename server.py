@@ -12,6 +12,8 @@ import os
 from src.command_line_application import CommandLineApplication
 from src.message_response import MessageResponse
 from src.message_request import MessageRequest
+from src.login_response import LoginResponse
+from src.login_request import LoginRequest
 from src.message_type import MessageType
 from src.port_number import PortNumber
 
@@ -34,6 +36,7 @@ class Server(CommandLineApplication):
 
         self.hostname = "192.168.68.75"
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
+        self.users: dict[str, str] = {}
 
     def run(self):
         try:
@@ -52,6 +55,14 @@ class Server(CommandLineApplication):
             logging.error(error)
             print("Error binding socket on provided port")
             raise SystemExit from error
+
+    def login_user(self, login_request: LoginRequest) -> LoginResponse:
+        """
+        Check log in request to ensure that the user is registered.
+        Otherwise, register the user.
+        """
+        user_name, = login_request.decode()
+        return LoginResponse(user_name in self.users)
 
     def run_server(self, welcoming_socket: socket.socket):
         """
