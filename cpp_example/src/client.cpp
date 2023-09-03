@@ -1,13 +1,16 @@
 #include "client.h"
+
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <fcntl.h>
+
 #include <iostream>
 #include <cstring>
 
-Client::Client(const std::string &host, const uint16_t port) : m_host(host), m_port(port)
+Client::Client(const std::string &host, const uint16_t port, const std::string &sender) : m_host(host), m_port(port), m_sender(sender)
 {
-    std::cout << "Starting client at: " << m_host << ":" << m_port << std::endl;
+    std::cout << "Starting client at: " << m_host << ":" << m_port << " with sender name: " << m_sender << std::endl;
 }
 
 Client::~Client()
@@ -40,11 +43,33 @@ void Client::connect_to_server()
         return;
     }
 
+    int flags = fcntl(m_fd, F_GETFL, 0);
+    fcntl(m_fd, F_SETFL, flags | O_NONBLOCK);
+
     std::cout << "Connected to the server" << std::endl;
 }
 
-void Client::send_message(const std::string &message)
+void Client::send_message(Message &message)
 {
-    send(m_fd, message.c_str(), message.size(), 0);
-    std::cout << "Message sent" << std::endl;
+    message.sender = m_sender;
+    std::vector<uint8_t> encoded_message = Message::encode(message);
+    send(m_fd, encoded_message.data(), encoded_message.size(), 0);
+}
+
+Message Client::receive_message()
+{
+    uint8_t *buffer = new uint8_t[4096];
+    int read_len;
+
+    while (true)
+    {
+        read_len = read(m_fd, buffer, 4096);
+
+        if (read_len <= 0)
+        {
+            continue;
+        }
+
+        return Message::decode(buffer, read_len);
+    }
 }
