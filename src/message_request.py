@@ -69,13 +69,8 @@ class MessageRequest(Record):
         Decodes a message request packet
         :param record: An array of bytes containing the message request
         """
-        magic_number = record[0] << 8 | record[1]
-        if magic_number != Record.MAGIC_NUMBER:
-            raise ValueError("Received message request with incorrect magic number")
-
-        if 1 <= record[2] <= 2:
-            message_type = MessageType(record[2])
-        else:
+        message_type = Record.validate_record(record)
+        if message_type not in (MessageType.READ, MessageType.CREATE):
             raise ValueError("Received message request with invalid ID")
 
         user_name_length = record[3]

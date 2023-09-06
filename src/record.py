@@ -4,6 +4,8 @@ This module contains the abstract class for all records
 
 import abc
 
+from message_type import MessageType
+
 
 class Record(metaclass=abc.ABCMeta):
     """
@@ -25,6 +27,20 @@ class Record(metaclass=abc.ABCMeta):
         Converts the record into a bytes object
         """
         raise NotImplementedError
+
+    @staticmethod
+    def validate_record(record) -> MessageType:
+        """
+        Checks the magic number is correct
+        """
+        magic_number = record[0] << 8 | record[1]
+        if magic_number != Record.MAGIC_NUMBER:
+            raise ValueError("Invalid magic number when decoding message response")
+
+        try:
+            return MessageType(record[2])
+        except ValueError as error:
+            raise ValueError("Invalid message type when decoding message response") from error
 
     @classmethod
     @abc.abstractmethod

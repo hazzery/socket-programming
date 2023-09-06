@@ -55,14 +55,8 @@ class MessageResponse(Record):
         Decodes a message response packet
         :param record: The packet to be decoded
         """
-        magic_number = record[0] << 8 | record[1]
-        if magic_number != Record.MAGIC_NUMBER:
-            raise ValueError("Invalid magic number when decoding message response")
+        message_type = Record.validate_record(record)
 
-        try:
-            message_type = MessageType(record[2])
-        except ValueError as error:
-            raise ValueError("Invalid message type when decoding message response") from error
         if message_type != MessageType.RESPONSE:
             raise ValueError(f"Message type {message_type} found when decoding message response, "
                              f"expected RESPONSE")

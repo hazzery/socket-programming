@@ -38,11 +38,8 @@ class LoginRequest(Record):
         """
         Create a login request packet from a byte array
         """
-        magic_number = record[0] << 8 | record[1]
-        if magic_number != Record.MAGIC_NUMBER:
-            raise ValueError("Received message request with incorrect magic number")
-
-        if record[2] != MessageType.LOGIN.value:
+        message_type = Record.validate_record(record)
+        if message_type != MessageType.LOGIN:
             raise ValueError("Received log-in request with invalid ID")
 
         user_name_length = record[3]
