@@ -9,6 +9,8 @@ import socket
 import sys
 import os
 
+from message_cipher.rsa_system import RSA
+
 from src.command_line_application import CommandLineApplication
 from src.message_response import MessageResponse
 from src.message_request import MessageRequest
@@ -33,6 +35,7 @@ class Server(CommandLineApplication):
         # pylint thinks that self.parse_arguments is only capable of returning an empty list
         # pylint: disable=unbalanced-tuple-unpacking
         self.port_number, = self.parse_arguments(arguments)
+        self.public_key, self.private_key = RSA()
 
         self.hostname = "localhost"
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
