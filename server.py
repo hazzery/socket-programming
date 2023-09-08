@@ -65,7 +65,7 @@ class Server(CommandLineApplication):
         Otherwise, register the user.
         """
         user_name, = login_request.decode()
-        return LoginResponse(user_name in self.users)
+        return LoginResponse(user_name in self.users, self.public_key)
 
     def run_server(self, welcoming_socket: socket.socket):
         """
