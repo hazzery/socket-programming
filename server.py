@@ -35,7 +35,7 @@ class Server(CommandLineApplication):
         self.hostname = "192.168.68.75"
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
-    def run(self):
+    def run(self) -> None:
         try:
             # Create a TCP/IP socket
             with socket.socket() as welcoming_socket:
@@ -53,7 +53,7 @@ class Server(CommandLineApplication):
             print("Error binding socket on provided port")
             raise SystemExit from error
 
-    def run_server(self, welcoming_socket: socket.socket):
+    def run_server(self, welcoming_socket: socket.socket) -> None:
         """
         Runs the server side of the program
         :param welcoming_socket: The welcoming socket to accept connections on
@@ -97,7 +97,7 @@ class Server(CommandLineApplication):
             print("Message request discarded")
 
 
-def main():
+def main() -> None:
     """
     Runs the server side of the program
     """

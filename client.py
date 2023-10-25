@@ -108,7 +108,7 @@ class Client(CommandLineApplication):
         return response
 
     @staticmethod
-    def read_message_response(response: MessageResponse):
+    def read_message_response(response: MessageResponse) -> None:
         """
         Reads a message response from the server
         :param response: The message response from the server
@@ -126,7 +126,7 @@ class Client(CommandLineApplication):
             logging.info("Server has more messages available for this user")
             print("More messages available, please send another request")
 
-    def run(self):
+    def run(self) -> None:
         if self.message_type == MessageType.CREATE:
             self.receiver_name = input("Enter the name of the receiver: ")
             self.message = input("Enter the message to be sent: ")
@@ -140,7 +140,7 @@ class Client(CommandLineApplication):
             self.read_message_response(response)
 
 
-def main():
+def main() -> None:
     """
     Runs the client side of the program
     """

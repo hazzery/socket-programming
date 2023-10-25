@@ -55,7 +55,7 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
         return parsed_arguments
 
     @abc.abstractmethod
-    def run(self):
+    def run(self) -> None:
         """
         Run the command line application.
         """
