@@ -11,7 +11,7 @@ class PortNumber(int):
     MINIMUM = 1024
     MAXIMUM = 64000
 
-    def __new__(cls, string: str):
+    def __new__(cls, string: str) -> "PortNumber":
         try:
             value = int(string)
         except ValueError as error:
