@@ -2,6 +2,7 @@
 This module contains the abstract class for all records
 """
 
+from typing import Self
 import abc
 
 
@@ -28,7 +29,7 @@ class Record(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def from_record(cls, record: bytes) -> "Record":
+    def from_record(cls, record: bytes) -> Self:
         """
         Creates a record from a bytes object
         """
