@@ -2,7 +2,7 @@
 This module contains the abstract class for all records
 """
 
-from typing import Self
+from typing import Self, Any
 import abc
 
 
@@ -14,7 +14,7 @@ class Record(metaclass=abc.ABCMeta):
     MAGIC_NUMBER = 0xAE73
 
     @abc.abstractmethod
-    def __init__(self, *args):
+    def __init__(self, *args: tuple[Any, ...]):
         """
         Initialises the record
         """
@@ -36,7 +36,7 @@ class Record(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def decode(self) -> tuple:
+    def decode(self) -> tuple[Any]:
         """
         Decodes the record into a tuple of values
         """
