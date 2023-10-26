@@ -3,7 +3,7 @@ This module contains the MessageResponse class, which is used to encode and deco
 message response packets.
 """
 
-from typing import Union
+from typing import Union, Self
 import logging
 
 from .message_type import MessageType
@@ -50,7 +50,7 @@ class MessageResponse(Record):
         return bytes(self.record)
 
     @classmethod
-    def from_record(cls, record: bytes) -> "MessageResponse":
+    def from_record(cls, record: bytes) -> Self:
         """
         Decodes a message response packet
         :param record: The packet to be decoded

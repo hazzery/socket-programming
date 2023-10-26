@@ -4,8 +4,8 @@ This module contains the MessageRequest class which is used to encode and decode
 message request packets.
 """
 
+from typing import Union, Self
 import logging
-from typing import Union
 
 from .message_type import MessageType
 from .record import Record
@@ -64,7 +64,7 @@ class MessageRequest(Record):
         return bytes(self.record)
 
     @classmethod
-    def from_record(cls, record: bytes) -> "MessageRequest":
+    def from_record(cls, record: bytes) -> Self:
         """
         Decodes a message request packet
         :param record: An array of bytes containing the message request
