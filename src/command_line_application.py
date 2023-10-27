@@ -43,7 +43,7 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
             if len(arguments) != len(self.parameters):
                 raise ValueError(f"Invalid number of arguments, must be {len(self.parameters)}")
 
-            for argument, (_, parser) in zip(arguments, self.parameters.items()):
+            for argument, parser in zip(arguments, self.parameters.values()):
                 argument = parser(argument)
                 parsed_arguments.append(argument)
         except (TypeError, ValueError) as error:

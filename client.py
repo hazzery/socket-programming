@@ -11,8 +11,8 @@ import sys
 import os
 
 from src.command_line_application import CommandLineApplication
-from src.message_response import MessageResponse
-from src.message_request import MessageRequest
+from src.packets.message_response import MessageResponse
+from src.packets.message_request import MessageRequest
 from src.message_type import MessageType
 from src.port_number import PortNumber
 
@@ -78,21 +78,21 @@ class Client(CommandLineApplication):
 
         return user_name
 
-    def send_message_request(self, request: MessageRequest) -> Optional[MessageResponse]:
+    def send_message_request(self, request: MessageRequest) -> Optional[bytes]:
         """
         Sends a message request record to the server
         :param request: The message request to be sent
+        :return: The server's response if applicable, otherwise ``None``
         """
-        record = request.to_bytes()
+        packet = request.to_bytes()
         response = None
         try:
             with socket.socket() as connection_socket:
                 connection_socket.settimeout(1)
                 connection_socket.connect((self.host_name, self.port_number))
-                connection_socket.send(record)
+                connection_socket.send(packet)
                 if self.message_type == MessageType.READ:
                     response = connection_socket.recv(4096)
-                    response = MessageResponse.from_record(response)
 
         except ConnectionRefusedError as error:
             logging.error(error)
@@ -105,15 +105,16 @@ class Client(CommandLineApplication):
 
         logging.info("%s record sent as %s", self.message_type.name.lower(), self.user_name)
         print(f"{self.message_type.name.lower()} record sent as {self.user_name}")
+
         return response
 
     @staticmethod
-    def read_message_response(response: MessageResponse) -> None:
+    def read_message_response(packet: bytes) -> None:
         """
         Reads a message response from the server
-        :param response: The message response from the server
+        :param packet: The message response from the server
         """
-        messages, more_messages = response.decode()
+        messages, more_messages = MessageResponse.decode_packet(packet)
 
         for sender, message in messages:
             logging.info("Received %s's message \"%s\"", sender, message)
@@ -136,7 +137,7 @@ class Client(CommandLineApplication):
         request = MessageRequest(self.message_type, self.user_name,
                                  self.receiver_name, self.message)
         response = self.send_message_request(request)
-        if self.message_type == MessageType.READ:
+        if self.message_type == MessageType.READ and response:
             self.read_message_response(response)
 
 
