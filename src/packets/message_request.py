@@ -11,7 +11,7 @@ from src.message_type import MessageType
 from .packet import Packet
 
 
-class MessageRequest(Packet):
+class MessageRequest(Packet, struct_format="!HBBBH"):
     """
     The MessageRequest class is used to encode and decode message request packets.
 

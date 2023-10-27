@@ -9,7 +9,7 @@ from src.message_type import MessageType
 from src.packets.packet import Packet
 
 
-class MessageResponse(Packet):
+class MessageResponse(Packet, struct_format="!HBB?"):
     """
     A class for encoding and decoding message response packets
     """
