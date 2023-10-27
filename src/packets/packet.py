@@ -40,6 +40,22 @@ class Packet(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @classmethod
+    def split_packet(cls, packet: bytes) -> tuple[tuple[Any, ...], bytes]:
+        """
+        Splits the packet into its header and payload.
+        :param packet: The packet to split up.
+        :return: A tuple containing:
+            a tuple of the individual header fields,
+            and the packet's payload.
+        """
+        header_size = struct.calcsize(cls.struct_format)
+        header, payload = packet[:header_size], packet[header_size:]
+
+        header_fields = struct.unpack(cls.struct_format, header)
+
+        return header_fields, payload
+
+    @classmethod
     def __init_subclass__(cls, struct_format: str | None = None, **kwargs: tuple[Any, ...]) -> None:
         """
         Ensures that subclasses of ``Packet`` specify a ``struct_format`` in their class attributes.
