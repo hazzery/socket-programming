@@ -1,9 +1,16 @@
+"""
+This module contains the Message class, which is used to encode and decode
+messages from within the MessageResponse packet.
+"""
 import struct
 
 from .packet import Packet
 
 
 class Message(Packet, struct_format="!BH"):
+    """
+    A class for encoding and decoding message packets
+    """
     def __init__(self, sender_name: str, message: bytes):
         """
         Creates the Message which can be encoded into a packet.

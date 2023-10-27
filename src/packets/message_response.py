@@ -5,7 +5,7 @@ message response packets.
 import logging
 import struct
 
-from packets.message import Message
+from src.packets.message import Message
 from src.message_type import MessageType
 from src.packets.packet import Packet
 
@@ -69,7 +69,7 @@ class MessageResponse(Packet, struct_format="!HBB?"):
 
         messages: list[tuple[str, str]] = []
         remaining_messages = payload
-        for i in range(num_messages):
+        for _ in range(num_messages):
             sender_name, message, remaining_messages = Message.decode_packet(remaining_messages)
             logging.info("Decoded message from %s: \"%s\"", sender_name, message)
             messages.append((sender_name, message))
