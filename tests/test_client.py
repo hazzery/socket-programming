@@ -17,7 +17,7 @@ class TestClient(unittest.TestCase):
         Client.parse_hostname("localhost")
 
     def test_parse_host_name_ip_address(self) -> None:
-        """Test parsing an IP address as hostname"""
+        """Test parsing a valid IP address as hostname"""
         Client.parse_hostname("1.1.1.1")
 
     def test_parse_host_name_domain_name(self) -> None:
@@ -29,9 +29,18 @@ class TestClient(unittest.TestCase):
         logging.disable(logging.CRITICAL)
         self.assertRaises(ValueError, Client.parse_hostname, "invalid")
 
-    def test_parse_username_valid(self) -> None:
-        """Test parsing a valid username"""
-        Client.parse_username("John")
+    def test_parse_host_name_invalid_ip(self) -> None:
+        """Test parsing an invalid IP address as hostname"""
+        logging.disable(logging.CRITICAL)
+        self.assertRaises(ValueError, Client.parse_hostname, "256.0.0.1")
+
+    def test_parse_username_min_length(self) -> None:
+        """Test parsing a valid username with minimum length"""
+        Client.parse_username("J")
+
+    def test_parse_username_max_length(self) -> None:
+        """Test parsing a valid username with maximum length"""
+        Client.parse_username("J" * 255)
 
     def test_parse_username_empty(self) -> None:
         """Test that parsing an empty username raises a ValueError"""
