@@ -4,14 +4,14 @@ This module contains the MessageRequest class which is used to encode and decode
 message request packets.
 """
 
-from typing import Union, Self
 import logging
+import struct
 
-from .message_type import MessageType
-from .record import Record
+from src.message_type import MessageType
+from .packet import Packet
 
 
-class MessageRequest(Record):
+class MessageRequest(Packet):
     """
     The MessageRequest class is used to encode and decode message request packets.
 
@@ -23,8 +23,10 @@ class MessageRequest(Record):
         message_type, sender_name, receiver_name, message = message_request.decode()
     """
 
+    structure_format = "!HBBBH"
+
     def __init__(self, message_type: MessageType, user_name: str,
-                 receiver_name: str, message: Union[str, bytes]):
+                 receiver_name: str, message: str):
         """
         Encodes a message request packet
         :param message_type: The type of the request (READ or CREATE)
@@ -36,7 +38,7 @@ class MessageRequest(Record):
         self.user_name = user_name
         self.receiver_name = receiver_name
         self.message = message
-        self.record = bytearray(7)
+        self.packet = bytes()
 
     def to_bytes(self) -> bytes:
         """
@@ -49,69 +51,62 @@ class MessageRequest(Record):
             logging.info("Creating CREATE request to send %s the message \"%s\" from %s",
                          self.receiver_name, self.message, self.user_name)
 
-        self.record[0] = Record.MAGIC_NUMBER >> 8
-        self.record[1] = Record.MAGIC_NUMBER & 0xFF
-        self.record[2] = self.message_type.value
-        self.record[3] = len(self.user_name.encode())
-        self.record[4] = len(self.receiver_name.encode())
-        self.record[5] = len(self.message.encode()) >> 8
-        self.record[6] = len(self.message.encode()) & 0xFF
+        self.packet = struct.pack(self.structure_format,
+                                  Packet.MAGIC_NUMBER,
+                                  self.message_type.value,
+                                  len(self.user_name.encode()),
+                                  len(self.receiver_name.encode()),
+                                  len(self.message.encode()))
 
-        self.record.extend(self.user_name.encode())
-        self.record.extend(self.receiver_name.encode())
-        self.record.extend(self.message.encode())
+        self.packet += self.user_name.encode()
+        self.packet += self.receiver_name.encode()
+        self.packet += self.message.encode()
 
-        return bytes(self.record)
+        return self.packet
 
     @classmethod
-    def from_record(cls, record: bytes) -> Self:
+    def decode_packet(cls, packet: bytes) -> tuple[MessageType, str, str, bytes]:
         """
         Decodes a message request packet
-        :param record: An array of bytes containing the message request
+        :param packet: An array of bytes containing the message request
         """
-        magic_number = record[0] << 8 | record[1]
-        if magic_number != Record.MAGIC_NUMBER:
+        structure_size = struct.calcsize(cls.structure_format)
+        structure = packet[:structure_size]
+
+        fields = struct.unpack(cls.structure_format, structure)
+        magic_number, message_type, user_name_size, receiver_name_size, message_size = fields
+
+        if magic_number != Packet.MAGIC_NUMBER:
             raise ValueError("Received message request with incorrect magic number")
 
-        if 1 <= record[2] <= 2:
-            message_type = MessageType(record[2])
+        if 1 <= message_type <= 2:
+            message_type = MessageType(message_type)
         else:
             raise ValueError("Received message request with invalid ID")
 
-        user_name_length = record[3]
-        receiver_name_length = record[4]
-        message_length = record[5] << 8 | record[6]
-
-        if user_name_length < 1:
+        if user_name_size < 1:
             raise ValueError("Received message request with insufficient user name length")
 
         if message_type == MessageType.READ:
-            if receiver_name_length != 0:
+            if receiver_name_size != 0:
                 raise ValueError("Received read request with non-zero receiver name length")
-            if message_length != 0:
+            if message_size != 0:
                 raise ValueError("Received read request with non-zero message length")
 
         elif message_type == MessageType.CREATE:
-            if receiver_name_length < 1:
+            if receiver_name_size < 1:
                 raise ValueError("Received create request with insufficient receiver name length")
-            if message_length < 1:
+            if message_size < 1:
                 raise ValueError("Received create request with insufficient message length")
 
-        index = 7
+        index = structure_size
 
-        user_name = record[index:index + user_name_length].decode()
-        index += user_name_length
+        user_name = packet[index:index + user_name_size].decode()
+        index += user_name_size
 
-        receiver_name = record[index:index + receiver_name_length].decode()
-        index += receiver_name_length
+        receiver_name = packet[index:index + receiver_name_size].decode()
+        index += receiver_name_size
 
-        message = record[index:index + message_length]
+        message = packet[index:index + message_size]
 
-        return cls(message_type, user_name, receiver_name, message)
-
-    def decode(self) -> tuple[MessageType, str, str, bytes]:
-        """
-        Decodes the message request packet
-        :return: A tuple containing the message type, username, receiver name and message
-        """
-        return self.message_type, self.user_name, self.receiver_name, self.message
+        return message_type, user_name, receiver_name, message

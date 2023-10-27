@@ -10,8 +10,8 @@ import sys
 import os
 
 from src.command_line_application import CommandLineApplication
-from src.message_response import MessageResponse
-from src.message_request import MessageRequest
+from src.packets.message_response import MessageResponse
+from src.packets.message_request import MessageRequest
 from src.message_type import MessageType
 from src.port_number import PortNumber
 
@@ -32,7 +32,7 @@ class Server(CommandLineApplication):
         # pylint: disable=unbalanced-tuple-unpacking
         self.port_number, = self.parse_arguments(arguments)
 
-        self.hostname = "192.168.68.75"
+        self.hostname = "localhost"
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
     def run(self) -> None:
@@ -67,8 +67,8 @@ class Server(CommandLineApplication):
         try:
             with connection_socket:
                 record = connection_socket.recv(4096)
-                request = MessageRequest.from_record(record)
-                message_type, sender_name, receiver_name, message = request.decode()
+                request_fields = MessageRequest.decode_packet(record)
+                message_type, sender_name, receiver_name, message = request_fields
 
                 if message_type == MessageType.READ:
                     response = MessageResponse(self.messages.get(sender_name, []))
