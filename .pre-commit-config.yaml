@@ -13,3 +13,12 @@ repos:
     -   id: mypy
         language_version: python3.12
         args: [--strict, --ignore-missing-imports]
+
+- repo: local
+  hooks:
+    - id: pylint
+      name: pylint
+      entry: pylint
+      language: system
+      types: [python]
+      args: [src, tests, server.py, client.py]
