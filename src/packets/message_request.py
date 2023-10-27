@@ -23,8 +23,6 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         message_type, sender_name, receiver_name, message = message_request.decode()
     """
 
-    structure_format = "!HBBBH"
-
     def __init__(self, message_type: MessageType, user_name: str,
                  receiver_name: str, message: str):
         """
@@ -51,7 +49,7 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
             logging.info("Creating CREATE request to send %s the message \"%s\" from %s",
                          self.receiver_name, self.message, self.user_name)
 
-        self.packet = struct.pack(self.structure_format,
+        self.packet = struct.pack(self.struct_format,
                                   Packet.MAGIC_NUMBER,
                                   self.message_type.value,
                                   len(self.user_name.encode()),
@@ -70,11 +68,8 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         Decodes a message request packet
         :param packet: An array of bytes containing the message request
         """
-        structure_size = struct.calcsize(cls.structure_format)
-        structure = packet[:structure_size]
-
-        fields = struct.unpack(cls.structure_format, structure)
-        magic_number, message_type, user_name_size, receiver_name_size, message_size = fields
+        header_fields, payload = cls.split_packet(packet)
+        magic_number, message_type, user_name_size, receiver_name_size, message_size = header_fields
 
         if magic_number != Packet.MAGIC_NUMBER:
             raise ValueError("Received message request with incorrect magic number")
@@ -99,14 +94,12 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
             if message_size < 1:
                 raise ValueError("Received create request with insufficient message length")
 
-        index = structure_size
+        user_name = payload[:user_name_size].decode()
+        index = user_name_size
 
-        user_name = packet[index:index + user_name_size].decode()
-        index += user_name_size
-
-        receiver_name = packet[index:index + receiver_name_size].decode()
+        receiver_name = payload[index:index + receiver_name_size].decode()
         index += receiver_name_size
 
-        message = packet[index:index + message_size]
+        message = payload[index:index + message_size]
 
         return message_type, user_name, receiver_name, message
