@@ -11,6 +11,7 @@ class Message(Packet, struct_format="!BH"):
     """
     A class for encoding and decoding message packets
     """
+
     def __init__(self, sender_name: str, message: bytes):
         """
         Creates the Message which can be encoded into a packet.
@@ -26,8 +27,9 @@ class Message(Packet, struct_format="!BH"):
         Encodes the message into bytes for transmission through a socket.
         :return: A ``bytes`` object encoding the message.
         """
-        self.packet += struct.pack(self.struct_format,
-                                   len(self.sender_name.encode()), len(self.message))
+        self.packet += struct.pack(
+            self.struct_format, len(self.sender_name.encode()), len(self.message)
+        )
         self.packet += self.sender_name.encode()
         self.packet += self.message
 
@@ -47,7 +49,7 @@ class Message(Packet, struct_format="!BH"):
         sender_name = payload[:sender_name_length].decode()
         index = sender_name_length
 
-        message = payload[index:index + message_length].decode()
+        message = payload[index : index + message_length].decode()
         index += message_length
 
         remaining_messages = payload[index:]

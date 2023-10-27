@@ -23,8 +23,13 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         message_type, sender_name, receiver_name, message = message_request.decode()
     """
 
-    def __init__(self, message_type: MessageType, user_name: str,
-                 receiver_name: str, message: str):
+    def __init__(
+        self,
+        message_type: MessageType,
+        user_name: str,
+        receiver_name: str,
+        message: str,
+    ):
         """
         Encodes a message request packet
         :param message_type: The type of the request (READ or CREATE)
@@ -46,15 +51,21 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         if self.message_type == MessageType.READ:
             logging.info("Creating READ request from %s", self.user_name)
         else:
-            logging.info("Creating CREATE request to send %s the message \"%s\" from %s",
-                         self.receiver_name, self.message, self.user_name)
+            logging.info(
+                'Creating CREATE request to send %s the message "%s" from %s',
+                self.receiver_name,
+                self.message,
+                self.user_name,
+            )
 
-        self.packet = struct.pack(self.struct_format,
-                                  Packet.MAGIC_NUMBER,
-                                  self.message_type.value,
-                                  len(self.user_name.encode()),
-                                  len(self.receiver_name.encode()),
-                                  len(self.message.encode()))
+        self.packet = struct.pack(
+            self.struct_format,
+            Packet.MAGIC_NUMBER,
+            self.message_type.value,
+            len(self.user_name.encode()),
+            len(self.receiver_name.encode()),
+            len(self.message.encode()),
+        )
 
         self.packet += self.user_name.encode()
         self.packet += self.receiver_name.encode()
@@ -69,7 +80,13 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         :param packet: An array of bytes containing the message request
         """
         header_fields, payload = cls.split_packet(packet)
-        magic_number, message_type, user_name_size, receiver_name_size, message_size = header_fields
+        (
+            magic_number,
+            message_type,
+            user_name_size,
+            receiver_name_size,
+            message_size,
+        ) = header_fields
 
         if magic_number != Packet.MAGIC_NUMBER:
             raise ValueError("Received message request with incorrect magic number")
@@ -80,26 +97,34 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
             raise ValueError("Received message request with invalid ID")
 
         if user_name_size < 1:
-            raise ValueError("Received message request with insufficient user name length")
+            raise ValueError(
+                "Received message request with insufficient user name length"
+            )
 
         if message_type == MessageType.READ:
             if receiver_name_size != 0:
-                raise ValueError("Received read request with non-zero receiver name length")
+                raise ValueError(
+                    "Received read request with non-zero receiver name length"
+                )
             if message_size != 0:
                 raise ValueError("Received read request with non-zero message length")
 
         elif message_type == MessageType.CREATE:
             if receiver_name_size < 1:
-                raise ValueError("Received create request with insufficient receiver name length")
+                raise ValueError(
+                    "Received create request with insufficient receiver name length"
+                )
             if message_size < 1:
-                raise ValueError("Received create request with insufficient message length")
+                raise ValueError(
+                    "Received create request with insufficient message length"
+                )
 
         user_name = payload[:user_name_size].decode()
         index = user_name_size
 
-        receiver_name = payload[index:index + receiver_name_size].decode()
+        receiver_name = payload[index : index + receiver_name_size].decode()
         index += receiver_name_size
 
-        message = payload[index:index + message_size]
+        message = payload[index : index + message_size]
 
         return message_type, user_name, receiver_name, message

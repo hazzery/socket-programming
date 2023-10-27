@@ -66,7 +66,9 @@ class Packet(metaclass=abc.ABCMeta):
         return header_fields, payload
 
     @classmethod
-    def __init_subclass__(cls, struct_format: str | None = None, **kwargs: tuple[Any, ...]) -> None:
+    def __init_subclass__(
+        cls, struct_format: str | None = None, **kwargs: tuple[Any, ...]
+    ) -> None:
         """
         Ensures that subclasses of ``Packet`` specify a ``struct_format`` in their class attributes.
         :param struct_format: The format of the packet data for the ``struct`` module.

@@ -23,7 +23,7 @@ class MessageResponse(Packet, struct_format="!HBB?"):
         self.num_messages = min(len(messages), 255)
         self.more_messages = len(messages) > 255
 
-        self.messages = messages[:self.num_messages]
+        self.messages = messages[: self.num_messages]
         self.packet = bytes()
 
     def to_bytes(self) -> bytes:
@@ -33,15 +33,17 @@ class MessageResponse(Packet, struct_format="!HBB?"):
         """
         logging.info("Creating message response for %s message(s)", self.num_messages)
 
-        self.packet = struct.pack(self.struct_format,
-                                  Packet.MAGIC_NUMBER,
-                                  MessageType.RESPONSE.value,
-                                  self.num_messages,
-                                  self.more_messages)
+        self.packet = struct.pack(
+            self.struct_format,
+            Packet.MAGIC_NUMBER,
+            MessageType.RESPONSE.value,
+            self.num_messages,
+            self.more_messages,
+        )
 
         for sender, message in self.messages:
             self.packet += Message(sender, message).to_bytes()
-            logging.info("Encoded message from %s: \"%s\"", sender, message.decode())
+            logging.info('Encoded message from %s: "%s"', sender, message.decode())
 
         return self.packet
 
@@ -62,16 +64,22 @@ class MessageResponse(Packet, struct_format="!HBB?"):
         try:
             message_type = MessageType(message_type)
         except ValueError as error:
-            raise ValueError("Invalid message type when decoding message response") from error
+            raise ValueError(
+                "Invalid message type when decoding message response"
+            ) from error
         if message_type != MessageType.RESPONSE:
-            raise ValueError(f"Message type {message_type} found when decoding message response, "
-                             "expected RESPONSE")
+            raise ValueError(
+                f"Message type {message_type} found when decoding message response, "
+                "expected RESPONSE"
+            )
 
         messages: list[tuple[str, str]] = []
         remaining_messages = payload
         for _ in range(num_messages):
-            sender_name, message, remaining_messages = Message.decode_packet(remaining_messages)
-            logging.info("Decoded message from %s: \"%s\"", sender_name, message)
+            sender_name, message, remaining_messages = Message.decode_packet(
+                remaining_messages
+            )
+            logging.info('Decoded message from %s: "%s"', sender_name, message)
             messages.append((sender_name, message))
 
         return messages, more_messages

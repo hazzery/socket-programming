@@ -14,7 +14,7 @@ class TestPortNumber(unittest.TestCase):
 
     def test_non_numeric(self) -> None:
         """Test that non-numeric input raises a TypeError."""
-        self.assertRaises(TypeError, PortNumber, 'abc')
+        self.assertRaises(TypeError, PortNumber, "abc")
 
     def test_below_bound(self) -> None:
         """Test that input below the lower bound raises a ValueError."""

@@ -26,19 +26,31 @@ class Client(CommandLineApplication):
         """
         Initialises the client with a specified host name, port number, username, and message type.
         """
-        super().__init__(OrderedDict(host_name=self.parse_hostname,
-                                     port_number=PortNumber,
-                                     user_name=self.parse_username,
-                                     message_type=MessageType.from_str))
+        super().__init__(
+            OrderedDict(
+                host_name=self.parse_hostname,
+                port_number=PortNumber,
+                user_name=self.parse_username,
+                message_type=MessageType.from_str,
+            )
+        )
 
         # pylint thinks that self.parse_arguments is only capable of returning an empty list
         # pylint: disable=unbalanced-tuple-unpacking
-        self.host_name, self.port_number, self.user_name, self.message_type =\
-            self.parse_arguments(arguments)
+        (
+            self.host_name,
+            self.port_number,
+            self.user_name,
+            self.message_type,
+        ) = self.parse_arguments(arguments)
 
-        logging.info("Client for %s port %s created by %s to send %s request",
-                     self.host_name, self.port_number, self.user_name,
-                     self.message_type.name.lower())
+        logging.info(
+            "Client for %s port %s created by %s to send %s request",
+            self.host_name,
+            self.port_number,
+            self.user_name,
+            self.message_type.name.lower(),
+        )
 
         self.receiver_name = ""
         self.message = ""
@@ -55,8 +67,10 @@ class Client(CommandLineApplication):
             socket.getaddrinfo(host_name, 1024)
         except socket.gaierror as error:
             logging.error(error)
-            raise ValueError("Invalid host name, must be an IP address, domain name,"
-                             " or \"localhost\"") from error
+            raise ValueError(
+                "Invalid host name, must be an IP address, domain name,"
+                ' or "localhost"'
+            ) from error
 
         return host_name
 
@@ -103,7 +117,9 @@ class Client(CommandLineApplication):
             print("Connection timed out, likely due to invalid host name")
             raise SystemExit from error
 
-        logging.info("%s record sent as %s", self.message_type.name.lower(), self.user_name)
+        logging.info(
+            "%s record sent as %s", self.message_type.name.lower(), self.user_name
+        )
         print(f"{self.message_type.name.lower()} record sent as {self.user_name}")
 
         return response
@@ -117,7 +133,7 @@ class Client(CommandLineApplication):
         messages, more_messages = MessageResponse.decode_packet(packet)
 
         for sender, message in messages:
-            logging.info("Received %s's message \"%s\"", sender, message)
+            logging.info('Received %s\'s message "%s"', sender, message)
             print(f"Message from {sender}:\n{message}\n")
 
         if len(messages) == 0:
@@ -131,11 +147,13 @@ class Client(CommandLineApplication):
         if self.message_type == MessageType.CREATE:
             self.receiver_name = input("Enter the name of the receiver: ")
             self.message = input("Enter the message to be sent: ")
-            logging.info("User specified message to %s: \"%s\"",
-                         self.receiver_name, self.message)
+            logging.info(
+                'User specified message to %s: "%s"', self.receiver_name, self.message
+            )
 
-        request = MessageRequest(self.message_type, self.user_name,
-                                 self.receiver_name, self.message)
+        request = MessageRequest(
+            self.message_type, self.user_name, self.receiver_name, self.message
+        )
         response = self.send_message_request(request)
         if self.message_type == MessageType.READ and response:
             self.read_message_response(response)
@@ -146,9 +164,11 @@ def main() -> None:
     Runs the client side of the program
     """
     os.makedirs(os.path.dirname("logs/client/"), exist_ok=True)
-    logging.basicConfig(level=logging.INFO,
-                        filename=f"logs/client/{datetime.now()}.log",
-                        format="%(levelname)s: %(message)s")
+    logging.basicConfig(
+        level=logging.INFO,
+        filename=f"logs/client/{datetime.now()}.log",
+        format="%(levelname)s: %(message)s",
+    )
 
     try:
         client = Client(sys.argv[1:])
@@ -157,5 +177,5 @@ def main() -> None:
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
