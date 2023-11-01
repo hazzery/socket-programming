@@ -52,6 +52,50 @@ class Server(CommandLineApplication):
             print("Error binding socket on provided port")
             raise SystemExit from error
 
+    def process_read_request(
+        self, connection_socket: socket.socket, sender_name: str
+    ) -> None:
+        """
+        Respond to read requests
+        :param sender_name: The name of the user who sent the read request
+        :param connection_socket: The connection socket to send the response on
+        :return: The response to the read request
+        """
+        response = MessageResponse(self.messages.get(sender_name, []))
+        record = response.to_bytes()
+        connection_socket.send(record)
+        del self.messages.get(sender_name, [])[: response.num_messages]
+        logging.info(
+            "%s message(s) delivered to %s",
+            response.num_messages,
+            sender_name,
+        )
+        print(f"{response.num_messages} message(s) delivered to {sender_name}")
+
+    def process_create_request(
+        self, sender_name: str, receiver_name: str, message: bytes
+    ) -> None:
+        """
+        Processes create requests.
+        :param sender_name: The name of the user who sent the create request.
+        :param receiver_name: The name of the user who will receive the message.
+        :param message: The message to be sent.
+        """
+        if receiver_name not in self.messages:
+            self.messages[receiver_name] = []
+
+        self.messages[receiver_name].append((sender_name, message))
+        logging.info(
+            'Storing %s\'s message to %s: "%s"',
+            sender_name,
+            receiver_name,
+            message.decode(),
+        )
+        print(
+            f"{sender_name} sends the message "
+            f'"{message.decode()}" to {receiver_name}'
+        )
+
     def run_server(self, welcoming_socket: socket.socket) -> None:
         """
         Runs the server side of the program
@@ -70,34 +114,10 @@ class Server(CommandLineApplication):
                 message_type, sender_name, receiver_name, message = request_fields
 
                 if message_type == MessageType.READ:
-                    response = MessageResponse(self.messages.get(sender_name, []))
-                    record = response.to_bytes()
-                    connection_socket.send(record)
-                    del self.messages.get(sender_name, [])[: response.num_messages]
-                    logging.info(
-                        "%s message(s) delivered to %s",
-                        response.num_messages,
-                        sender_name,
-                    )
-                    print(
-                        f"{response.num_messages} message(s) delivered to {sender_name}"
-                    )
+                    self.process_read_request(connection_socket, sender_name)
 
                 elif message_type == MessageType.CREATE:
-                    if receiver_name not in self.messages:
-                        self.messages[receiver_name] = []
-
-                    self.messages[receiver_name].append((sender_name, message))
-                    logging.info(
-                        'Storing %s\'s message to %s: "%s"',
-                        sender_name,
-                        receiver_name,
-                        message.decode(),
-                    )
-                    print(
-                        f"{sender_name} sends the message "
-                        f'"{message.decode()}" to {receiver_name}'
-                    )
+                    self.process_create_request(sender_name, receiver_name, message)
 
         except socket.timeout as error:
             logging.error(error)
