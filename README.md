@@ -1,6 +1,7 @@
 # Socket Programming
 ![unittests passing](https://github.com/hazzery/socket-programming/actions/workflows/unittests.yml/badge.svg)
 [![codecov](https://codecov.io/gh/hazzery/socket-programming/graph/badge.svg?token=6GQA3I43XT)](https://codecov.io/gh/hazzery/socket-programming)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/hazzery/socket-programming/master.svg)](https://results.pre-commit.ci/latest/github/hazzery/socket-programming/master)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/pylint-dev/pylint)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
