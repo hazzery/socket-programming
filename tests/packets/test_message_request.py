@@ -19,7 +19,9 @@ class TestMessageRequest(unittest.TestCase):
         user_name = "Jamie"
         receiver_name = "Jonty"
         message = "Hello, World!"
-        packet = MessageRequest(message_type, user_name, receiver_name, message).to_bytes()
+        packet = MessageRequest(
+            message_type, user_name, receiver_name, message
+        ).to_bytes()
 
         expected = Packet.MAGIC_NUMBER
         actual = (packet[0] << 8) | (packet[1] & 0xFF)
@@ -31,7 +33,9 @@ class TestMessageRequest(unittest.TestCase):
         user_name = "Jamie"
         receiver_name = "Jonty"
         message = "Hello, World!"
-        packet = MessageRequest(message_type, user_name, receiver_name, message).to_bytes()
+        packet = MessageRequest(
+            message_type, user_name, receiver_name, message
+        ).to_bytes()
 
         expected = message_type.value
         actual = packet[2]
@@ -43,7 +47,9 @@ class TestMessageRequest(unittest.TestCase):
         user_name = "Johnny"
         receiver_name = "Jarod"
         message = "Hello, World!"
-        packet = MessageRequest(message_type, user_name, receiver_name, message).to_bytes()
+        packet = MessageRequest(
+            message_type, user_name, receiver_name, message
+        ).to_bytes()
 
         expected = len(user_name.encode())
         actual = packet[3]
@@ -55,7 +61,9 @@ class TestMessageRequest(unittest.TestCase):
         user_name = "Jackson"
         receiver_name = "Jake"
         message = "Hello, World!"
-        packet = MessageRequest(message_type, user_name, receiver_name, message).to_bytes()
+        packet = MessageRequest(
+            message_type, user_name, receiver_name, message
+        ).to_bytes()
 
         expected = len(receiver_name.encode())
         actual = packet[4]
@@ -67,7 +75,9 @@ class TestMessageRequest(unittest.TestCase):
         user_name = "Jason"
         receiver_name = "Jay"
         message = "Hello, World!"
-        packet = MessageRequest(message_type, user_name, receiver_name, message).to_bytes()
+        packet = MessageRequest(
+            message_type, user_name, receiver_name, message
+        ).to_bytes()
 
         expected = len(message.encode())
         actual = (packet[5] << 8) | (packet[6] & 0xFF)
@@ -79,7 +89,9 @@ class TestMessageRequest(unittest.TestCase):
         user_name = "Jason"
         receiver_name = "Jay"
         message = "Hello, World!"
-        packet = MessageRequest(message_type, user_name, receiver_name, message).to_bytes()
+        packet = MessageRequest(
+            message_type, user_name, receiver_name, message
+        ).to_bytes()
 
         expected = user_name
         actual = packet[7 : 7 + len(user_name.encode())].decode()
@@ -91,12 +103,16 @@ class TestMessageRequest(unittest.TestCase):
         user_name = "Jeff"
         receiver_name = "Jesse"
         message = "Hello, World!"
-        packet = MessageRequest(message_type, user_name, receiver_name, message).to_bytes()
+        packet = MessageRequest(
+            message_type, user_name, receiver_name, message
+        ).to_bytes()
 
         start_index = 7 + len(user_name.encode())
 
         expected = receiver_name
-        actual = packet[start_index : start_index + len(receiver_name.encode())].decode()
+        actual = packet[
+            start_index : start_index + len(receiver_name.encode())
+        ].decode()
         self.assertEqual(expected, actual)
 
     def test_message_encoding(self) -> None:
@@ -105,7 +121,9 @@ class TestMessageRequest(unittest.TestCase):
         user_name = "Julian"
         receiver_name = "Jimmy"
         message = "Hello, World!"
-        packet = MessageRequest(message_type, user_name, receiver_name, message).to_bytes()
+        packet = MessageRequest(
+            message_type, user_name, receiver_name, message
+        ).to_bytes()
 
         start_index = 7 + len(user_name.encode()) + len(receiver_name.encode())
 

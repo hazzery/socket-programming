@@ -38,7 +38,7 @@ class TestMessage(unittest.TestCase):
         packet = Message(sender_name, message_bytes).to_bytes()
 
         expected = sender_name
-        actual = packet[3: 3 + len(sender_name.encode())].decode()
+        actual = packet[3 : 3 + len(sender_name.encode())].decode()
         self.assertEqual(expected, actual)
 
     def test_message_encoding(self) -> None:

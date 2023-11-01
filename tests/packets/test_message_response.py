@@ -33,7 +33,10 @@ class TestMessageResponse(unittest.TestCase):
 
     def test_num_messages_encoding(self) -> None:
         """Tests that the number of messages is encoded correctly"""
-        messages = [("Harry", "Hello John!".encode()), ("John", "Hello Harry!".encode())]
+        messages = [
+            ("Harry", "Hello John!".encode()),
+            ("John", "Hello Harry!".encode()),
+        ]
         packet = MessageResponse(messages).to_bytes()
 
         expected = len(messages)
