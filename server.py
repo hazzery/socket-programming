@@ -7,7 +7,7 @@ import logging
 import sys
 import os
 
-from src.server import Server
+from src.applications.server import Server
 
 
 def main() -> None:

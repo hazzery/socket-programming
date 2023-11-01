@@ -6,7 +6,7 @@ from typing import Optional
 import logging
 import socket
 
-from src.command_line_application import CommandLineApplication
+from src.applications.command_line_application import CommandLineApplication
 from src.packets.message_response import MessageResponse
 from src.packets.message_request import MessageRequest
 from src.message_type import MessageType

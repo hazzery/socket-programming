@@ -7,7 +7,7 @@ import logging
 import sys
 import os
 
-from src.client import Client
+from src.applications.client import Client
 
 
 def main() -> None:
