@@ -37,9 +37,8 @@ class Server(CommandLineApplication):
             with socket.socket() as welcoming_socket:
                 # Bind the socket to the port
                 welcoming_socket.bind((self.hostname, self.port_number))
-                welcoming_socket.listen(
-                    5
-                )  # A maximum, of five unprocessed connections are allowed
+                # A maximum, of five unprocessed connections are allowed
+                welcoming_socket.listen(5)
                 logging.info(
                     "Server started on %s port %s", self.hostname, self.port_number
                 )
