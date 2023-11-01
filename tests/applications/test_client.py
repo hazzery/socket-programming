@@ -65,5 +65,5 @@ class TestClient(unittest.TestCase):
         # Check that the packet is correct
         request = MessageRequest.decode_packet(packet)
         self.assertEqual(
-            request, (MessageType.CREATE, user_name, receiver_name, message.encode())
+            (MessageType.CREATE, user_name, receiver_name, message.encode()), request
         )
