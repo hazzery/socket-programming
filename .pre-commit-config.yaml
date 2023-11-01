@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+    rev: v4.5.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
@@ -14,13 +14,10 @@ repos:
         language_version: python3.12
         args: [--strict, --ignore-missing-imports]
 
-- repo: local
+- repo: https://github.com/pylint-dev/pylint
+  rev: v3.0.2
   hooks:
     - id: pylint
-      name: pylint
-      entry: pylint
-      language: system
-      types: [python]
       args: [src, tests, server.py, client.py]
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
