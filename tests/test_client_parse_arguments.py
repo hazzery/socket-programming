@@ -4,10 +4,10 @@ Client class test suite
 import logging
 import unittest
 
-from client import Client
+from src.client import Client
 
 
-class TestClient(unittest.TestCase):
+class TestClientParseArguments(unittest.TestCase):
     """
     Test suite for Client class
     """
