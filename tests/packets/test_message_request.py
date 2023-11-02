@@ -10,7 +10,7 @@ from src.packets.message_request import MessageRequest
 
 class TestMessageRequestEncoding(unittest.TestCase):
     """
-    Test suite for MessageRequest packets
+    Test suite for encoding MessageRequest packets
     """
 
     def test_magic_number_encoding(self) -> None:
@@ -134,7 +134,7 @@ class TestMessageRequestEncoding(unittest.TestCase):
 
 class TestMessageRequestDecoding(unittest.TestCase):
     """
-    Test suite for MessageRequest packets
+    Test suite for decoding MessageRequest packets
     """
 
     def setUp(self) -> None:
