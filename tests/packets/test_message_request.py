@@ -15,7 +15,7 @@ class TestMessageRequestEncoding(unittest.TestCase):
 
     def test_magic_number_encoding(self) -> None:
         """Tests that the magic number is encoded correctly"""
-        message_type = MessageType.CREATE
+        message_type = MessageType.READ
         user_name = "Jamie"
         receiver_name = "Jonty"
         message = "Hello, World!"
