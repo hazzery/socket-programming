@@ -28,7 +28,9 @@ class TestServer(unittest.TestCase):
         Tests that a Server object cannot be constructed given an invalid arguments
         """
         logging.disable(logging.CRITICAL)
-        self.assertRaises(SystemExit, Server, ["invalid"])
+        self.assertRaises(
+            SystemExit, Server, [str(TestServer.port_number), "Extra argument"]
+        )
 
     def test_process_read_request(self) -> None:
         """
