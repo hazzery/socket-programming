@@ -46,3 +46,8 @@ Hello John! How are you?
 ```bash
 python3 client.py localhost 12000 John read
 ```
+
+# Licence
+This project is licenced under the GNU AGPL version 3
+
+![AGPLv3](https://www.gnu.org/graphics/agplv3-with-text-162x68.png)
