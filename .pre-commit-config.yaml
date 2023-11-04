@@ -18,8 +18,12 @@ repos:
   hooks:
     - id: pylint
       args: [src, tests, server.py, client.py]
+      stages: [pre-push]
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.1.3
   hooks:
+    - id: ruff
+      stages: [pre-commit]
     - id: ruff-format
+      stages: [pre-commit]
