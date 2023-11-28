@@ -2,22 +2,25 @@
 Login request module.
 Defines the LoginRequest class which is used to encode and decode login request packets.
 """
+from typing import Any
 import logging
+import struct
 
-from .message_type import MessageType
-from .record import Record
+from src.message_type import MessageType
+from src.packets.packet import Packet
 
 
-class LoginRequest(Record):
+class LoginRequest(Packet, struct_format="!HBB"):
     """
     The LoginRequest class is used to encode and decode login request packets.
     """
+
     def __init__(self, user_name: str):
         """
         Create a login request packet
         """
         self.user_name = user_name
-        self.record = bytearray(4)
+        self.packet = bytes()
 
     def to_bytes(self) -> bytes:
         """
@@ -25,31 +28,42 @@ class LoginRequest(Record):
         """
         logging.info("Creating log-in request as %s", self.user_name)
 
-        self.record[0] = Record.MAGIC_NUMBER >> 8
-        self.record[1] = Record.MAGIC_NUMBER & 0xFF
-        self.record[2] = MessageType.LOGIN.value
-        self.record[3] = len(self.user_name.encode())
-        self.record.extend(self.user_name.encode())
+        self.packet = struct.pack(
+            self.struct_format,
+            Packet.MAGIC_NUMBER,
+            MessageType.LOGIN.value,
+            len(self.user_name.encode()),
+        )
 
-        return bytes(self.record)
+        self.packet += self.user_name.encode()
+
+        return self.packet
 
     @classmethod
-    def from_record(cls, record: bytes) -> "LoginRequest":
+    def decode_packet(cls, packet: bytes) -> tuple[Any, ...]:
         """
-        Create a login request packet from a byte array
-        """
-        message_type = Record.validate_record(record)
-        if message_type != MessageType.LOGIN:
-            raise ValueError("Received log-in request with invalid ID")
-
-        user_name_length = record[3]
-        user_name = record[4:4 + user_name_length].decode()
-
-        return cls(user_name)
-
-    def decode(self) -> tuple:
-        """
-        Decode the individual fields of the login request packet
+        Decode the login request packet into its individual components
+        :param packet: The packet to be decoded
         :return: A tuple containing the username
         """
-        return self.user_name,
+        header_fields, payload = cls.split_packet(packet)
+        magic_number, message_type, user_name_length = header_fields
+
+        if magic_number != Packet.MAGIC_NUMBER:
+            raise ValueError("Invalid magic number when decoding message response")
+
+        try:
+            message_type = MessageType(message_type)
+        except ValueError as error:
+            raise ValueError(
+                "Invalid message type when decoding message response"
+            ) from error
+        if message_type != MessageType.LOGIN:
+            raise ValueError(
+                f"Message type {message_type} found when decoding message response, "
+                "expected LOGIN"
+            )
+
+        user_name = payload.decode()
+
+        return (user_name,)
