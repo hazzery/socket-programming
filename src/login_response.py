@@ -2,57 +2,65 @@
 Login response module
 Defines class for encoding and decoding login response packets.
 """
+import logging
+import struct
+
 from message_cipher.rsa_encrypter import RsaEncrypter
 
-from .message_type import MessageType
-from .record import Record
+from src.message_type import MessageType
+from src.packets.packet import Packet
 
 
-class LoginResponse(Record):
+class LoginResponse(Packet, struct_format="!HB?QQ"):
     """
     The LoginResponse class is used to encode and decode login response packets.
     """
+
     def __init__(self, is_registered: bool, encryption_key: RsaEncrypter):
         """
         Create a new login response packet.
         """
         self.encryption_key = encryption_key
         self.is_registered = is_registered
-        self.record = bytearray(3)
+        self.packet = bytes()
 
     def to_bytes(self) -> bytes:
         """
         Encode a login response packet into a byte array.
         """
-        self.record[0] = Record.MAGIC_NUMBER >> 8
-        self.record[1] = Record.MAGIC_NUMBER & 0xFF
-        self.record[2] = MessageType.LOGIN.value
-        self.record[3] = self.is_registered
-        self.record.extend(self.encryption_key.product.to_bytes(4, "big"))
-        self.record.extend(self.encryption_key.exponent.to_bytes(4, "big"))
+        logging.info("Creating login response")
 
-        return bytes(self.record)
+        self.packet = struct.pack(
+            self.struct_format,
+            Packet.MAGIC_NUMBER,
+            MessageType.LOGIN.value,
+            self.is_registered,
+            self.encryption_key.product,
+            self.encryption_key.exponent,
+        )
+
+        return self.packet
 
     @classmethod
-    def from_record(cls, record: bytes) -> "LoginResponse":
-        """
-        Decode a login response packet from a byte array.
-        """
-        message_type = Record.validate_record(record)
-        if message_type != MessageType.LOGIN:
-            raise ValueError(f"Message type {message_type} found when decoding login response, "
-                             f"expected LOGIN")
+    def decode_packet(cls, packet: bytes) -> tuple[bool, RsaEncrypter]:
+        header_fields, payload = cls.split_packet(packet)
+        magic_number, message_type, is_registered, product, exponent = header_fields
 
-        is_registered = bool(record[3])
-        product = int.from_bytes(record[4:8], "big")
-        exponent = int.from_bytes(record[8:12], "big")
+        if magic_number != Packet.MAGIC_NUMBER:
+            raise ValueError("Invalid magic number when decoding message response")
+
+        try:
+            message_type = MessageType(message_type)
+        except ValueError as error:
+            raise ValueError(
+                "Invalid message type when decoding message response"
+            ) from error
+        if message_type != MessageType.LOGIN:
+            raise ValueError(
+                f"Message type {message_type} found when decoding message response, "
+                "expected LOGIN"
+            )
 
         encryption_key = RsaEncrypter(product, exponent)
-        return cls(is_registered, encryption_key)
 
-    def decode(self) -> tuple[bool, RsaEncrypter]:
-        """
-        Decodes the login response packet
-        :return: A tuple containing the boolean value of is_registered and the encryption key
-        """
-        return self.is_registered, self.encryption_key
+        return is_registered, encryption_key
