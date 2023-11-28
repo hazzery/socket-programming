@@ -43,7 +43,7 @@ class LoginResponse(Packet, struct_format="!HB?QQ"):
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[bool, RsaEncrypter]:
-        header_fields, payload = cls.split_packet(packet)
+        header_fields, _ = cls.split_packet(packet)
         magic_number, message_type, is_registered, product, exponent = header_fields
 
         if magic_number != Packet.MAGIC_NUMBER:
