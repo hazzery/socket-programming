@@ -11,6 +11,9 @@ import logging
 import abc
 
 
+logger = logging.getLogger(__name__)
+
+
 class CommandLineApplication(metaclass=abc.ABCMeta):
     """
     An abstract class for command line applications.
@@ -49,7 +52,7 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
                 argument = parser(argument)
                 parsed_arguments.append(argument)
         except (TypeError, ValueError) as error:
-            logging.error(error)
+            logger.error(error)
             print(self.usage_prompt)
             print(error)
             raise SystemExit from error

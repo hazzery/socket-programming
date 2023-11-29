@@ -11,6 +11,9 @@ from src.message_type import MessageType
 from .packet import Packet
 
 
+logger = logging.getLogger(__name__)
+
+
 class MessageRequest(Packet, struct_format="!HBBBH"):
     """
     The MessageRequest class is used to encode and decode message request packets.
@@ -49,9 +52,9 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         :return: A byte array holding the message request
         """
         if self.message_type == MessageType.READ:
-            logging.info("Creating READ request from %s", self.user_name)
+            logger.info("Creating READ request from %s", self.user_name)
         else:
-            logging.info(
+            logger.info(
                 'Creating CREATE request to send %s the message "%s" from %s',
                 self.receiver_name,
                 self.message,
