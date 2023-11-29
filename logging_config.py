@@ -1,3 +1,8 @@
+"""
+Logging configuration for the project.
+Applies formatting and specifies output locations
+for all module loggers.
+"""
 from datetime import datetime
 import logging
 import sys
@@ -5,17 +10,24 @@ import os
 
 
 class StdoutHandlerFilter(logging.Filter):
+    """Filter to only allow DEBUG and INFO messages to stdout."""
+
     def filter(self, record: logging.LogRecord) -> bool:
+        """Denies messages with level WARNING or higher."""
         return record.levelno < logging.WARNING
 
 
 class PathnameFormatter(logging.Formatter):
+    """Formatter that replaces the module name with the path to the module."""
+
     def format(self, record: logging.LogRecord) -> str:
+        """Makes the filename clickable in PyCharm."""
         record.pathname = record.name.replace(".", "/") + ".py:" + str(record.lineno)
         return super().format(record)
 
 
 def configure_logging(package_name: str) -> None:
+    """Configures logging for the project."""
     file_formatter = PathnameFormatter(
         "%(asctime)s - " "%(levelname)-8s - " "%(pathname)-35s - " "%(message)s"
     )
