@@ -31,7 +31,7 @@ class PathnameFormatter(logging.Formatter):
 def configure_logging(package_name: str) -> None:
     """Configures logging for the project."""
     file_formatter = PathnameFormatter(
-        "%(asctime)s - " "%(levelname)-8s - " "%(pathname)-35s - " "%(message)s"
+        "%(asctime)s - %(levelname)-8s - %(pathname)-35s - %(message)s"
     )
     file_formatter.datefmt = "%d-%m-%y - %H:%M:%S.%s"
 
