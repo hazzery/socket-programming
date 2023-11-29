@@ -27,7 +27,9 @@ class Server(CommandLineApplication):
         Initialises the server with a specified port number.
         """
         super().__init__(OrderedDict(port_number=PortNumber))
-        # pylint thinks that self.parse_arguments is only capable of returning an empty list
+
+        # pylint thinks that self.parse_arguments is only
+        # capable of returning an empty list
         # pylint: disable=unbalanced-tuple-unpacking
         (self.port_number,) = self.parse_arguments(arguments)
 
@@ -38,7 +40,6 @@ class Server(CommandLineApplication):
         try:
             # Create a TCP/IP socket
             with socket.socket() as welcoming_socket:
-                # Bind the socket to the port
                 welcoming_socket.bind((self.hostname, self.port_number))
                 # A maximum, of five unprocessed connections are allowed
                 welcoming_socket.listen(5)

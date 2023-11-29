@@ -23,7 +23,8 @@ class Client(CommandLineApplication):
 
     def __init__(self, arguments: list[str]):
         """
-        Initialises the client with a specified host name, port number, username, and message type.
+        Initialises the client with a specified host name,
+        port number, username, and message type.
         """
         super().__init__(
             OrderedDict(
@@ -34,7 +35,8 @@ class Client(CommandLineApplication):
             )
         )
 
-        # pylint thinks that self.parse_arguments is only capable of returning an empty list
+        # pylint thinks that self.parse_arguments is only capable
+        # of returning an empty list
         # pylint: disable=unbalanced-tuple-unpacking
         (
             self.host_name,
