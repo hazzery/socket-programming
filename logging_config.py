@@ -9,18 +9,15 @@ class StdoutHandlerFilter(logging.Filter):
         return record.levelno < logging.WARNING
 
 
-class ConsoleLogFormatter(logging.Formatter):
+class PathnameFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         record.pathname = record.name.replace(".", "/") + ".py:" + str(record.lineno)
         return super().format(record)
 
 
 def configure_logging(package_name: str) -> None:
-    file_formatter = logging.Formatter(
-        "%(asctime)s - "
-        "%(levelname)-8s - "
-        "%(name)s %(funcName)s() line:%(lineno)-3d - "
-        "%(message)s"
+    file_formatter = PathnameFormatter(
+        "%(asctime)s - " "%(levelname)-8s - " "%(pathname)-35s - " "%(message)s"
     )
     file_formatter.datefmt = "%d-%m-%y - %H:%M:%S.%s"
 
@@ -31,7 +28,7 @@ def configure_logging(package_name: str) -> None:
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
 
-    console_formatter = ConsoleLogFormatter(
+    console_formatter = PathnameFormatter(
         "%(levelname)-8s - %(pathname)-35s - %(message)s"
     )
 
