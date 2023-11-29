@@ -9,6 +9,7 @@ import sys
 import os
 
 
+# pylint: disable=too-few-public-methods
 class StdoutHandlerFilter(logging.Filter):
     """Filter to only allow DEBUG and INFO messages to stdout."""
 
@@ -17,6 +18,7 @@ class StdoutHandlerFilter(logging.Filter):
         return record.levelno < logging.WARNING
 
 
+# pylint: disable=too-few-public-methods
 class PathnameFormatter(logging.Formatter):
     """Formatter that replaces the module name with the path to the module."""
 
