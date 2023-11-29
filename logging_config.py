@@ -11,7 +11,7 @@ class StdoutHandlerFilter(logging.Filter):
 
 class ConsoleLogFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
-        record.name = record.name.replace(".", "/")
+        record.pathname = record.name.replace(".", "/") + ".py:" + str(record.lineno)
         return super().format(record)
 
 
@@ -32,7 +32,7 @@ def configure_logging(package_name: str) -> None:
     file_handler.setFormatter(file_formatter)
 
     console_formatter = ConsoleLogFormatter(
-        "%(levelname)-8s - %(name)s.py:%(lineno)-3d - %(message)s"
+        "%(levelname)-8s - %(pathname)-35s - %(message)s"
     )
 
     # stdout_handler = logging.StreamHandler(sys.stdout)
