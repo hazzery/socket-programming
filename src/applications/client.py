@@ -13,6 +13,9 @@ from src.message_type import MessageType
 from src.port_number import PortNumber
 
 
+logger = logging.getLogger(__name__)
+
+
 class Client(CommandLineApplication):
     """
     A client side program that sends and receives messages to and from the server.
@@ -20,7 +23,8 @@ class Client(CommandLineApplication):
 
     def __init__(self, arguments: list[str]):
         """
-        Initialises the client with a specified host name, port number, username, and message type.
+        Initialises the client with a specified host name,
+        port number, username, and message type.
         """
         super().__init__(
             OrderedDict(
@@ -31,7 +35,8 @@ class Client(CommandLineApplication):
             )
         )
 
-        # pylint thinks that self.parse_arguments is only capable of returning an empty list
+        # pylint thinks that self.parse_arguments is only capable
+        # of returning an empty list
         # pylint: disable=unbalanced-tuple-unpacking
         (
             self.host_name,
@@ -40,7 +45,7 @@ class Client(CommandLineApplication):
             self.message_type,
         ) = self.parse_arguments(arguments)
 
-        logging.info(
+        logger.info(
             "Client for %s port %s created by %s to send %s request",
             self.host_name,
             self.port_number,
@@ -62,7 +67,7 @@ class Client(CommandLineApplication):
         try:
             socket.getaddrinfo(host_name, 1024)
         except socket.gaierror as error:
-            logging.error(error)
+            logger.error(error)
             raise ValueError(
                 "Invalid host name, must be an IP address, domain name,"
                 ' or "localhost"'
@@ -79,11 +84,11 @@ class Client(CommandLineApplication):
         :raises ValueError: If the username is invalid
         """
         if len(user_name) == 0:
-            logging.error("Username is empty")
+            logger.error("Username is empty")
             raise ValueError("Username must not be empty")
 
         if len(user_name.encode()) > 255:
-            logging.error("Username consumes more than 255 bytes")
+            logger.error("Username consumes more than 255 bytes")
             raise ValueError("Username must consume at most 255 bytes")
 
         return user_name
@@ -105,15 +110,15 @@ class Client(CommandLineApplication):
                     response = connection_socket.recv(4096)
 
         except ConnectionRefusedError as error:
-            logging.error(error)
+            logger.error(error)
             print("Connection refused, likely due to invalid port number")
             raise SystemExit from error
         except socket.timeout as error:
-            logging.error(error)
+            logger.error(error)
             print("Connection timed out, likely due to invalid host name")
             raise SystemExit from error
 
-        logging.info(
+        logger.info(
             "%s record sent as %s", self.message_type.name.lower(), self.user_name
         )
         print(f"{self.message_type.name.lower()} record sent as {self.user_name}")
@@ -129,21 +134,21 @@ class Client(CommandLineApplication):
         messages, more_messages = MessageResponse.decode_packet(packet)
 
         for sender, message in messages:
-            logging.info('Received %s\'s message "%s"', sender, message)
+            logger.info('Received %s\'s message "%s"', sender, message)
             print(f"Message from {sender}:\n{message}\n")
 
         if len(messages) == 0:
-            logging.info("Response contained no messages")
+            logger.info("Response contained no messages")
             print("No messages available")
         elif more_messages:
-            logging.info("Server has more messages available for this user")
+            logger.info("Server has more messages available for this user")
             print("More messages available, please send another request")
 
     def run(self) -> None:
         if self.message_type == MessageType.CREATE:
             self.receiver_name = input("Enter the name of the receiver: ")
             self.message = input("Enter the message to be sent: ")
-            logging.info(
+            logger.info(
                 'User specified message to %s: "%s"', self.receiver_name, self.message
             )
 

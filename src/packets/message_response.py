@@ -10,6 +10,9 @@ from src.message_type import MessageType
 from src.packets.packet import Packet
 
 
+logger = logging.getLogger(__name__)
+
+
 class MessageResponse(Packet, struct_format="!HBB?"):
     """
     A class for encoding and decoding message response packets
@@ -31,7 +34,7 @@ class MessageResponse(Packet, struct_format="!HBB?"):
         Returns the message response packet
         :return: A byte array holding the message response
         """
-        logging.info("Creating message response for %s message(s)", self.num_messages)
+        logger.info("Creating message response for %s message(s)", self.num_messages)
 
         self.packet = struct.pack(
             self.struct_format,
@@ -43,7 +46,7 @@ class MessageResponse(Packet, struct_format="!HBB?"):
 
         for sender, message in self.messages:
             self.packet += Message(sender, message).to_bytes()
-            logging.info('Encoded message from %s: "%s"', sender, message.decode())
+            logger.info('Encoded message from %s: "%s"', sender, message.decode())
 
         return self.packet
 
@@ -79,7 +82,7 @@ class MessageResponse(Packet, struct_format="!HBB?"):
             sender_name, message, remaining_messages = Message.decode_packet(
                 remaining_messages
             )
-            logging.info('Decoded message from %s: "%s"', sender_name, message)
+            logger.info('Decoded message from %s: "%s"', sender_name, message)
             messages.append((sender_name, message))
 
         return messages, more_messages
