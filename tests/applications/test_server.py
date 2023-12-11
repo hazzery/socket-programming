@@ -6,7 +6,7 @@ import unittest
 import socket
 
 from src.packets.message_response import MessageResponse
-from src.applications.server import Server
+from server import Server
 
 
 class TestServer(unittest.TestCase):

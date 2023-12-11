@@ -1,12 +1,12 @@
 """
 Server side program
-Run with `python3 server.py <port number>`
+Run with `python3 -m server <port number>`
 """
 import logging
 import sys
 
 from logging_config import configure_logging
-from src.applications.server import Server
+from .server import Server
 
 
 logger = logging.getLogger(__name__)
