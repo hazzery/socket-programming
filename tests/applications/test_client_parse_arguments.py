@@ -1,7 +1,6 @@
 """
 Client class test suite
 """
-import logging
 import unittest
 
 from client import Client
@@ -26,12 +25,10 @@ class TestClientParseArguments(unittest.TestCase):
 
     def test_parse_host_name_invalid(self) -> None:
         """Test parsing an invalid hostname"""
-        logging.disable(logging.CRITICAL)
         self.assertRaises(ValueError, Client.parse_hostname, "invalid")
 
     def test_parse_host_name_invalid_ip(self) -> None:
         """Test parsing an invalid IP address as hostname"""
-        logging.disable(logging.CRITICAL)
         self.assertRaises(ValueError, Client.parse_hostname, "256.0.0.1")
 
     def test_parse_username_min_length(self) -> None:
@@ -44,10 +41,8 @@ class TestClientParseArguments(unittest.TestCase):
 
     def test_parse_username_empty(self) -> None:
         """Test that parsing an empty username raises a ValueError"""
-        logging.disable(logging.CRITICAL)
         self.assertRaises(ValueError, Client.parse_username, "")
 
     def test_parse_username_too_long(self) -> None:
         """Test that parsing a username that is too long raises a ValueError"""
-        logging.disable(logging.CRITICAL)
         self.assertRaises(ValueError, Client.parse_username, "a" * 256)
