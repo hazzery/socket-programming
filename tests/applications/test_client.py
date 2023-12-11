@@ -6,7 +6,7 @@ import socket
 
 from src.packets.message_request import MessageRequest
 from src.message_type import MessageType
-from src.applications.client import Client
+from client import Client
 
 
 class TestClient(unittest.TestCase):

@@ -4,7 +4,7 @@ Client class test suite
 import logging
 import unittest
 
-from src.applications.client import Client
+from client import Client
 
 
 class TestClientParseArguments(unittest.TestCase):
