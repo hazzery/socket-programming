@@ -10,7 +10,7 @@
 
 To start the server program, execute the following command in the project directory.
 ```bash
-python3 server.py <port_number>
+python3 -m server <port_number>
 ```
 This starts up a welcoming socket, which listens for client connections
 on the specified `port_number` for incoming connections.
@@ -18,7 +18,7 @@ on the specified `port_number` for incoming connections.
 
 To send and read messages, you must execute the client program using the following command.
 ```bash
-python3 client.py <server_address> <port_number> <username> <message_type>
+python3 -m client <server_address> <port_number> <username> <message_type>
 ```
 Here, `server_address` is the IP address of the computer in which the server program is running on,
 `port_number` is the port number on which the server program is listening for incoming connections,
@@ -32,19 +32,19 @@ recipient of your message, and the message you would like to send them.
 ## Example Usage
 ### Server
 ```bash
-python3 server.py 12000
+python3 -m server 12000
 ```
 
 ### Client 1
 ```bash
-python3 client.py localhost 12000 Alice create
+python3 -m client localhost 12000 Alice create
 John
 Hello John! How are you?
 ```
 
 ### Client 2
 ```bash
-python3 client.py localhost 12000 John read
+python3 -m client localhost 12000 John read
 ```
 
 # Licence
