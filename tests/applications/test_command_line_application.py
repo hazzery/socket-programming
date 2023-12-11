@@ -19,6 +19,10 @@ class TestClientParseArguments(unittest.TestCase):
         try:
 
             class NoStructFormat(Packet):
+                """
+                This class will not be created
+                """
+
                 def __init__(self, *args: tuple[Any, ...]):
                     pass
 
