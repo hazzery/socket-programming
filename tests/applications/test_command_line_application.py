@@ -33,6 +33,8 @@ class TestClientParseArguments(unittest.TestCase):
                 def decode_packet(cls, packet: bytes) -> tuple[Any, ...]:
                     return ()
 
+            NoStructFormat()
+
         except ValueError:
             pass
         else:
