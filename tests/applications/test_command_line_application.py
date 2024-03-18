@@ -1,6 +1,7 @@
 """
 Packet class test suite
 """
+
 import unittest
 from typing import Any
 

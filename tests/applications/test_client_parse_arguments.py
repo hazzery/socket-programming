@@ -1,6 +1,7 @@
 """
 Client class test suite
 """
+
 import unittest
 
 from client import Client

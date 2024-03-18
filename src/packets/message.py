@@ -2,6 +2,7 @@
 This module contains the Message class, which is used to encode and decode
 messages from within the MessageResponse packet.
 """
+
 import struct
 
 from .packet import Packet

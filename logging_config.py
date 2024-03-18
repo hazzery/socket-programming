@@ -3,6 +3,7 @@ Logging configuration for the project.
 Applies formatting and specifies output locations
 for all module loggers.
 """
+
 from datetime import datetime
 import logging
 import sys

@@ -1,6 +1,7 @@
 """
 MessageRequest class test suite
 """
+
 import unittest
 
 from src.packets.packet import Packet
