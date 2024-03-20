@@ -2,6 +2,7 @@
 Server side program
 Run with `python3 -m server <port number>`
 """
+
 import logging
 import sys
 

@@ -1,6 +1,7 @@
 """
 The server module contains the Server class
 """
+
 from collections import OrderedDict
 import logging
 import socket

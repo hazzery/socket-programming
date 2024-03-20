@@ -2,6 +2,7 @@
 This module contains the MessageResponse class, which is used to encode and decode
 message response packets.
 """
+
 import logging
 import struct
 

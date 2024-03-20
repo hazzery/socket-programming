@@ -1,6 +1,7 @@
 """
 Server class test suite
 """
+
 import unittest
 import socket
 

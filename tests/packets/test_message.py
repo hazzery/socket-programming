@@ -1,6 +1,7 @@
 """
 Message class test suite
 """
+
 import unittest
 
 from src.packets.message import Message

@@ -1,6 +1,7 @@
 """
 The client module contains the Client class
 """
+
 from collections import OrderedDict
 from typing import Optional
 import logging
