@@ -21,7 +21,7 @@ repos:
         stages: [pre-push]
 
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.2
+    rev: v0.4.3
     hooks:
     -   id: ruff
         stages: [pre-commit]
