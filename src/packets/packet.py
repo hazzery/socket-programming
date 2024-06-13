@@ -68,7 +68,11 @@ class Packet(metaclass=abc.ABCMeta):
     def __init_subclass__(
         cls, struct_format: str | None = None, **kwargs: tuple[Any, ...]
     ) -> None:
-        """Ensure that subclasses of ``Packet`` specify a ``struct_format`` in their class attributes.
+        """Ensure ``struct_format`` attribute is present.
+
+        All subclasses of ``Packet`` must specify a ``struct_format``
+        in their class attributes. This is used for packing and
+        unpacking the data into a minimal package.
 
         :param struct_format: The format of the packet data for the ``struct`` module.
         :param kwargs: No additional kwargs will be accepted.
