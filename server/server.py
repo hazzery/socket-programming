@@ -1,6 +1,5 @@
-"""
-The server module contains the Server class
-"""
+"""Home to the ``Server`` class."""
+
 from collections import OrderedDict
 import logging
 import socket
@@ -11,20 +10,19 @@ from src.packets.message_request import MessageRequest
 from src.message_type import MessageType
 from src.port_number import PortNumber
 
-
 logger = logging.getLogger(__name__)
 
 
 class Server(CommandLineApplication):
-    """
-    A server side program that receives messages from clients and stores them.
+    """A server side program that receives messages from clients and stores them.
 
-    The server can be run with `python3 server.py <port number>`.
+    The server can be run with ``python3 server.py <port number>``.
     """
 
     def __init__(self, arguments: list[str]):
-        """
-        Initialises the server with a specified port number.
+        """Initialise the server with a specified port number.
+
+        :param arguments: The program arguments from the command line.
         """
         super().__init__(OrderedDict(port_number=PortNumber))
 
@@ -37,6 +35,10 @@ class Server(CommandLineApplication):
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
     def run(self) -> None:
+        """Initiate the welcoming socket and start main event loop.
+
+        :raise SystemExit: If the socket fails to connect
+        """
         try:
             # Create a TCP/IP socket
             with socket.socket() as welcoming_socket:
@@ -59,11 +61,11 @@ class Server(CommandLineApplication):
     def process_read_request(
         self, connection_socket: socket.socket, sender_name: str
     ) -> None:
-        """
-        Respond to read requests
-        :param sender_name: The name of the user who sent the read request
-        :param connection_socket: The connection socket to send the response on
-        :return: The response to the read request
+        """Respond to read requests.
+
+        :param sender_name: The name of the user who sent the read request.
+        :param connection_socket: The connection socket to send the response on.
+        :return: The response to the read request.
         """
         response = MessageResponse(self.messages.get(sender_name, []))
         record = response.to_bytes()
@@ -79,9 +81,9 @@ class Server(CommandLineApplication):
     def process_create_request(
         self, sender_name: str, receiver_name: str, message: bytes
     ) -> None:
-        """
-        Processes create requests.
-        :param sender_name: The name of the user who sent the create request.
+        """Process create requests.
+
+        :param sender_name: The name of the user who sent the `create` request.
         :param receiver_name: The name of the user who will receive the message.
         :param message: The message to be sent.
         """
@@ -101,8 +103,8 @@ class Server(CommandLineApplication):
         )
 
     def run_server(self, welcoming_socket: socket.socket) -> None:
-        """
-        Runs the server side of the program
+        """Run the server side of the program.
+
         :param welcoming_socket: The welcoming socket to accept connections on
         """
         connection_socket, client_address = welcoming_socket.accept()

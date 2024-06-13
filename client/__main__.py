@@ -1,7 +1,8 @@
+"""Client side program.
+
+Run with ``python3 -m client <host name> <port number> <username> <message_type>``
 """
-Client side program
-Run with `python3 -m client <host name> <port number> <username> <message_type>`
-"""
+
 import sys
 
 from logging_config import configure_logging
@@ -9,9 +10,7 @@ from .client import Client
 
 
 def main() -> None:
-    """
-    Runs the client side of the program
-    """
+    """Run the client side of the program."""
     configure_logging("client")
 
     try:

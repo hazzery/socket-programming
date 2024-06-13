@@ -1,7 +1,8 @@
+"""Server side program.
+
+Run with ``python3 -m server <port number>``
 """
-Server side program
-Run with `python3 -m server <port number>`
-"""
+
 import logging
 import sys
 
@@ -13,9 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    """
-    Runs the server side of the program
-    """
+    """Boot up the server, ready accept client requests."""
     configure_logging("server")
 
     try:

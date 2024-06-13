@@ -1,8 +1,4 @@
-"""
-Message request module
-This module contains the MessageRequest class which is used to encode and decode
-message request packets.
-"""
+"""Home to the ``MessageReqeust`` class."""
 
 import logging
 import struct
@@ -15,8 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class MessageRequest(Packet, struct_format="!HBBBH"):
-    """
-    The MessageRequest class is used to encode and decode message request packets.
+    """Encoding and decoding of message request packets.
 
     Usage:
         message_request = MessageRequest(MessageType.CREATE, "sender_name", "receiver_name", "Hi")
@@ -33,8 +28,8 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         receiver_name: str,
         message: str,
     ):
-        """
-        Encodes a message request packet
+        """Encode a message request packet.
+
         :param message_type: The type of the request (READ or CREATE)
         :param user_name: The name of the user sending the request
         :param receiver_name: The name of the message recipient
@@ -47,8 +42,8 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         self.packet = bytes()
 
     def to_bytes(self) -> bytes:
-        """
-        Returns the message request packet
+        """Return the message request packet.
+
         :return: A byte array holding the message request
         """
         if self.message_type == MessageType.READ:
@@ -78,8 +73,8 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[MessageType, str, str, bytes]:
-        """
-        Decodes a message request packet
+        """Decode a message request packet.
+
         :param packet: An array of bytes containing the message request
         """
         header_fields, payload = cls.split_packet(packet)
