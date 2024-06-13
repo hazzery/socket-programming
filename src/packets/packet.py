@@ -8,8 +8,9 @@ import abc
 class Packet(metaclass=abc.ABCMeta):
     """Abstract class for all packets.
 
-    All classes subclassing ``Packet`` must specify ``struct_format`` in their class attributes.
-    The format of ``struct_format`` is as described in https://docs.python.org/3/library/struct.html
+    All classes inheriting ``Packet`` must specify ``struct_format``
+    in their class attributes. The format of ``struct_format`` is as
+    described in https://docs.python.org/3/library/struct.html
 
     Example::
 
