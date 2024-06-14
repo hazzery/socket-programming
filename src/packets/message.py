@@ -1,6 +1,6 @@
-"""
-This module contains the Message class, which is used to encode and decode
-messages from within the MessageResponse packet.
+"""Home to the ``Message`` class.
+
+which is used to encode and decode
 """
 
 import struct
@@ -9,13 +9,15 @@ from .packet import Packet
 
 
 class Message(Packet, struct_format="!BH"):
-    """
-    A class for encoding and decoding message packets
+    """A class for encoding and decoding message packets.
+
+    Message "packets" are the encoding of a single message from within
+    a MessageResponse packet.
     """
 
     def __init__(self, sender_name: str, message: bytes):
-        """
-        Creates the Message which can be encoded into a packet.
+        """Create the Message which can be encoded into a packet.
+
         :param sender_name: The name of the user sending this message.
         :param message: The message to be sent.
         """
@@ -24,8 +26,8 @@ class Message(Packet, struct_format="!BH"):
         self.packet = bytes()
 
     def to_bytes(self) -> bytes:
-        """
-        Encodes the message into bytes for transmission through a socket.
+        """Encode the message into bytes for transmission through a socket.
+
         :return: A ``bytes`` object encoding the message.
         """
         self.packet += struct.pack(
@@ -38,8 +40,8 @@ class Message(Packet, struct_format="!BH"):
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[str, str, bytes]:
-        """
-        Decodes a message packet into it's sender name and message.
+        """Decode a message packet into it's sender name and message.
+
         :param packet: A ``bytes`` object containing the message to be decoded.
         :return: The sender name and message,
             as well as all remaining bytes for other potential messages.

@@ -1,0 +1,27 @@
+[project]
+name = "socket-programming"
+version = "1.0.0"
+authors = [
+  { name="Harry Parkes", email="harrydparkes@proton.me" },
+]
+description = "Sever-Client program pair capable of delivering messages between clients"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU AGPL",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/hazzery/socket-programming"
+"Bug Tracker" = "https://github.com/hazzery/socket-programming/issues"
+
+[tool.ruff]
+exclude = ["docs/conf.py"]
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`), a subset of the pycodestyle (`E`) codes, and  pydocstyle (`D`)
+select = ["E4", "E7", "E9", "F", "D", "PL"]
+ignore = ["D203", "D213"]
+

@@ -13,18 +13,11 @@ repos:
         language_version: python3.12
         args: [--strict, --ignore-missing-imports]
 
--   repo: https://github.com/pylint-dev/pylint
-    rev: v3.1.0
-    hooks:
-    -   id: pylint
-        args: [src, tests, server, client]
-        stages: [pre-push]
-
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.2
+    rev: v0.4.3
     hooks:
     -   id: ruff
-        stages: [pre-commit]
+        stages: [pre-commit, pre-push]
     -   id: ruff-format
         stages: [pre-commit]
 

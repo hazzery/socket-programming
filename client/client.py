@@ -1,13 +1,11 @@
-"""
-The client module contains the Client class
-"""
+"""The client module contains the Client class."""
 
 from collections import OrderedDict
 from typing import Optional
 import logging
 import socket
 
-from src.applications.command_line_application import CommandLineApplication
+from src.command_line_application import CommandLineApplication
 from src.packets.message_response import MessageResponse
 from src.packets.message_request import MessageRequest
 from src.message_type import MessageType
@@ -18,14 +16,15 @@ logger = logging.getLogger(__name__)
 
 
 class Client(CommandLineApplication):
-    """
-    A client side program that sends and receives messages to and from the server.
-    """
+    """Send and receives messages to and from the server."""
+
+    MAX_USERNAME_LENGTH = 255
 
     def __init__(self, arguments: list[str]):
-        """
-        Initialises the client with a specified host name,
-        port number, username, and message type.
+        """Initialise the client with specified arguments.
+
+        :param arguments: A list containing the host name, port number
+        , username, and message type.
         """
         super().__init__(
             OrderedDict(
@@ -59,11 +58,11 @@ class Client(CommandLineApplication):
 
     @staticmethod
     def parse_hostname(host_name: str) -> str:
-        """
-        Parses the host name, ensuring it is valid.
-        :param host_name: String representing the host name
-        :return: String of the host name
-        :raises ValueError: If the host name is invalid
+        """Parse the host name, ensuring it is valid.
+
+        :param host_name: String representing the host name.
+        :return: String of the host name.
+        :raises ValueError: If the host name is invalid.
         """
         try:
             socket.getaddrinfo(host_name, 1024)
@@ -78,27 +77,27 @@ class Client(CommandLineApplication):
 
     @staticmethod
     def parse_username(user_name: str) -> str:
-        """
-        Parses the username, ensuring it is valid.
-        :param user_name: String representing the username
-        :return: String of the username
-        :raises ValueError: If the username is invalid
+        """Parse the username, ensuring it is valid.
+
+        :param user_name: String representing the username.
+        :return: String of the username.
+        :raises ValueError: If the username is invalid.
         """
         if len(user_name) == 0:
             logger.error("Username is empty")
             raise ValueError("Username must not be empty")
 
-        if len(user_name.encode()) > 255:
+        if len(user_name.encode()) > Client.MAX_USERNAME_LENGTH:
             logger.error("Username consumes more than 255 bytes")
             raise ValueError("Username must consume at most 255 bytes")
 
         return user_name
 
     def send_message_request(self, request: MessageRequest) -> Optional[bytes]:
-        """
-        Sends a message request record to the server
-        :param request: The message request to be sent
-        :return: The server's response if applicable, otherwise ``None``
+        """Send a message request record to the server.
+
+        :param request: The message request to be sent.
+        :return: The server's response if applicable, otherwise ``None``.
         """
         packet = request.to_bytes()
         response = None
@@ -128,9 +127,9 @@ class Client(CommandLineApplication):
 
     @staticmethod
     def read_message_response(packet: bytes) -> None:
-        """
-        Reads a message response from the server
-        :param packet: The message response from the server
+        """Read a message response from the server.
+
+        :param packet: The message response from the server.
         """
         messages, more_messages = MessageResponse.decode_packet(packet)
 
@@ -146,6 +145,7 @@ class Client(CommandLineApplication):
             print("More messages available, please send another request")
 
     def run(self) -> None:
+        """Ask the user to input message and send request to server."""
         if self.message_type == MessageType.CREATE:
             self.receiver_name = input("Enter the name of the receiver: ")
             self.message = input("Enter the message to be sent: ")
