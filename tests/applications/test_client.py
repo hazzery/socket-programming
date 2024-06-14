@@ -1,6 +1,4 @@
-"""
-Client class test suite
-"""
+"""Client class test suite."""
 
 import unittest
 import socket
@@ -11,23 +9,17 @@ from client import Client
 
 
 class TestClient(unittest.TestCase):
-    """
-    Test suite for Client class
-    """
+    """Test suite for Client class."""
 
     hostname = "localhost"
     port_number = 12000
 
     def test_construction(self) -> None:
-        """
-        Tests that a Client object can be constructed given correct arguments
-        """
+        """Tests that a Client object can be constructed given correct arguments."""
         Client([TestClient.hostname, str(TestClient.port_number), "Alice", "create"])
 
     def test_construction_raise_error(self) -> None:
-        """
-        Tests that a Client object cannot be constructed given an invalid arguments
-        """
+        """Tests that a Client object cannot be constructed given an invalid arguments."""
         self.assertRaises(
             SystemExit,
             Client,
@@ -35,9 +27,7 @@ class TestClient(unittest.TestCase):
         )
 
     def test_send_message_request(self) -> None:
-        """
-        Tests that a Client object can send a message request
-        """
+        """Tests that a Client object can send a message request."""
         client = Client(
             [TestClient.hostname, str(TestClient.port_number), "Alice", "create"]
         )

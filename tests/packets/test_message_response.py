@@ -1,6 +1,4 @@
-"""
-MessageResponse class test suite
-"""
+"""MessageResponse class test suite."""
 
 import unittest
 
@@ -10,12 +8,10 @@ from src.packets.message_response import MessageResponse
 
 
 class TestMessageResponseEncoding(unittest.TestCase):
-    """
-    Test suite for encoding MessageResponse packets
-    """
+    """Test suite for encoding MessageResponse packets."""
 
     def test_magic_number_encoding(self) -> None:
-        """Tests that the magic number is encoded correctly"""
+        """Tests that the magic number is encoded correctly."""
         messages: list[tuple[str, bytes]] = []
         packet = MessageResponse(messages).to_bytes()
 
@@ -24,7 +20,7 @@ class TestMessageResponseEncoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_message_type_encoding(self) -> None:
-        """Tests that the message type is encoded correctly"""
+        """Tests that the message type is encoded correctly."""
         messages: list[tuple[str, bytes]] = []
         packet = MessageResponse(messages).to_bytes()
 
@@ -33,7 +29,7 @@ class TestMessageResponseEncoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_num_messages_encoding(self) -> None:
-        """Tests that the number of messages is encoded correctly"""
+        """Tests that the number of messages is encoded correctly."""
         messages = [
             ("Harry", "Hello John!".encode()),
             ("John", "Hello Harry!".encode()),
@@ -45,7 +41,7 @@ class TestMessageResponseEncoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_more_messages_encoding(self) -> None:
-        """Tests that the more messages flag is encoded correctly"""
+        """Tests that the more messages flag is encoded correctly."""
         messages: list[tuple[str, bytes]] = []
         packet = MessageResponse(messages).to_bytes()
 
@@ -55,12 +51,10 @@ class TestMessageResponseEncoding(unittest.TestCase):
 
 
 class TestMessageResponseDecoding(unittest.TestCase):
-    """
-    Test suite for decoding MessageResponse packets
-    """
+    """Test suite for decoding MessageResponse packets."""
 
     def test_messages_decoding(self) -> None:
-        """Tests that the messages are decoded correctly"""
+        """Tests that the messages are decoded correctly."""
         messages = [
             ("Harry", "Hello John!".encode()),
             ("John", "Hello Harry!".encode()),
@@ -75,7 +69,7 @@ class TestMessageResponseDecoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_more_messages_decoding_false(self) -> None:
-        """Tests that the more messages flag is decoded correctly"""
+        """Tests that the more messages flag is decoded correctly."""
         messages = [
             ("Harry", "Hello John!".encode()),
             ("John", "Hello Harry!".encode()),
@@ -87,7 +81,7 @@ class TestMessageResponseDecoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_more_messages_decoding_true(self) -> None:
-        """Tests that the more messages flag is decoded correctly"""
+        """Tests that the more messages flag is decoded correctly."""
         messages = [("Harry", "Hello John!".encode())] * 256
         packet = MessageResponse(messages).to_bytes()
 
@@ -96,7 +90,7 @@ class TestMessageResponseDecoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_incorrect_magic_number(self) -> None:
-        """Tests that a ValueError is raised when the magic number is incorrect"""
+        """Tests that a ``ValueError`` is raised when the magic number is incorrect."""
         messages: list[tuple[str, bytes]] = []
         packet = MessageResponse(messages).to_bytes()
 
@@ -106,7 +100,7 @@ class TestMessageResponseDecoding(unittest.TestCase):
         self.assertRaises(ValueError, MessageResponse.decode_packet, bytes(packet))
 
     def test_invalid_message_type(self) -> None:
-        """Tests that a ValueError is raised when the message type is invalid"""
+        """Tests that a ``ValueError`` is raised when the message type is invalid."""
         messages: list[tuple[str, bytes]] = []
         packet = MessageResponse(messages).to_bytes()
 
@@ -116,7 +110,7 @@ class TestMessageResponseDecoding(unittest.TestCase):
         self.assertRaises(ValueError, MessageResponse.decode_packet, bytes(packet))
 
     def test_incorrect_message_type(self) -> None:
-        """Tests that a ValueError is raised when the message type is incorrect"""
+        """Tests that a ``ValueError`` is raised when the message type is incorrect."""
         messages: list[tuple[str, bytes]] = []
         packet = MessageResponse(messages).to_bytes()
 

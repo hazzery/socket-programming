@@ -1,6 +1,4 @@
-"""
-Server package
-==================
+"""The server.
 
 The server package is directly executable using::
 

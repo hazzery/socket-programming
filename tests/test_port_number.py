@@ -1,6 +1,4 @@
-"""
-Port Number parsing class test suite.
-"""
+"""Port Number parsing class test suite."""
 
 import unittest
 
@@ -8,9 +6,7 @@ from src.port_number import PortNumber
 
 
 class TestPortNumber(unittest.TestCase):
-    """
-    Test suite for PortNumber class.
-    """
+    """Test suite for PortNumber class."""
 
     def test_non_numeric(self) -> None:
         """Test that non-numeric input raises a TypeError."""

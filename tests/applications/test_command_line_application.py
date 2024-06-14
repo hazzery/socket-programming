@@ -1,6 +1,4 @@
-"""
-Packet class test suite
-"""
+"""Packet class test suite."""
 
 import unittest
 from typing import Any
@@ -9,20 +7,14 @@ from src.packets.packet import Packet
 
 
 class TestClientParseArguments(unittest.TestCase):
-    """
-    Test suite for Client class
-    """
+    """Test suite for Client class."""
 
     def test_fail_subclass(self) -> None:
-        """
-        Test that we cannot subclass from CommandLineApplication without struct format
-        """
+        """Test that we cannot subclass from CommandLineApplication without struct format."""
         try:
 
             class NoStructFormat(Packet):
-                """
-                This class will not be created
-                """
+                """No ``struct_formatt`` passed so class will not be created."""
 
                 def __init__(self, *args: tuple[Any, ...]):
                     pass

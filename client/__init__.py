@@ -1,6 +1,4 @@
-"""
-Client package
-==================
+"""The client.
 
 The client package is directly executable using::
 

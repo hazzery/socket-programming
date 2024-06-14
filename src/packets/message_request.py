@@ -89,10 +89,13 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         if magic_number != Packet.MAGIC_NUMBER:
             raise ValueError("Received message request with incorrect magic number")
 
-        if 1 <= message_type <= 2:
+        try:
             message_type = MessageType(message_type)
-        else:
-            raise ValueError("Received message request with invalid ID")
+        except ValueError as error:
+            raise ValueError("Received message request with invalid ID") from error
+
+        if message_type == MessageType.RESPONSE:
+            raise ValueError("Recieved message request with disallowed type RESPONSE")
 
         if user_name_size < 1:
             raise ValueError(

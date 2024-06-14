@@ -1,6 +1,4 @@
-"""
-Server class test suite
-"""
+"""Server class test suite."""
 
 import unittest
 import socket
@@ -10,31 +8,23 @@ from server import Server
 
 
 class TestServer(unittest.TestCase):
-    """
-    Test suite for Server class
-    """
+    """Test suite for Server class."""
 
     port_number = 12000
     hostname = "localhost"
 
     def test_construction(self) -> None:
-        """
-        Tests that a Server object can be constructed given correct arguments
-        """
+        """Tests that a Server object can be constructed given correct arguments."""
         Server([str(TestServer.port_number)])
 
     def test_construction_raise_error(self) -> None:
-        """
-        Tests that a Server object cannot be constructed given an invalid arguments
-        """
+        """.Tests that a Server object cannot be constructed given an invalid arguments."""
         self.assertRaises(
             SystemExit, Server, [str(TestServer.port_number), "Extra argument"]
         )
 
     def test_process_read_request(self) -> None:
-        """
-        Tests that Server objects correctly responds to read requests
-        """
+        """Tests that Server objects correctly responds to read requests."""
         server = Server([str(TestServer.port_number)])
         receiver_name = "John"
         sender_name = "Alice"

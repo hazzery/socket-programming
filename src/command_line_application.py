@@ -46,8 +46,8 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
                 )
 
             for argument, parser in zip(arguments, self.parameters.values()):
-                argument = parser(argument)
-                parsed_arguments.append(argument)
+                parsed_argument = parser(argument)
+                parsed_arguments.append(parsed_argument)
         except (TypeError, ValueError) as error:
             logger.error(error)
             print(self.usage_prompt)

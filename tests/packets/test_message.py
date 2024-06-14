@@ -1,6 +1,4 @@
-"""
-Message class test suite
-"""
+"""Message class test suite."""
 
 import unittest
 
@@ -8,12 +6,10 @@ from src.packets.message import Message
 
 
 class TestMessage(unittest.TestCase):
-    """
-    Test suite for Message packets
-    """
+    """Test suite for Message packets."""
 
     def test_sender_length_encoding(self) -> None:
-        """Tests that the length of the sender's name is encoded correctly"""
+        """Tests that the length of the sender's name is encoded correctly."""
         sender_name = "John"
         message_bytes = "Hello, World!".encode()
         packet = Message(sender_name, message_bytes).to_bytes()
@@ -23,7 +19,7 @@ class TestMessage(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_message_length_encoding(self) -> None:
-        """Tests that the length of the message is encoded correctly"""
+        """Tests that the length of the message is encoded correctly."""
         sender_name = "Jack"
         message_bytes = "Hello, World!".encode()
         packet = Message(sender_name, message_bytes).to_bytes()
@@ -33,7 +29,7 @@ class TestMessage(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_sender_name_encoding(self) -> None:
-        """Tests that the sender's name is encoded correctly"""
+        """Tests that the sender's name is encoded correctly."""
         sender_name = "Jacob"
         message_bytes = "Hello, World!".encode()
         packet = Message(sender_name, message_bytes).to_bytes()
@@ -43,7 +39,7 @@ class TestMessage(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_message_encoding(self) -> None:
-        """Tests that the message is encoded correctly"""
+        """Tests that the message is encoded correctly."""
         sender_name = "James"
         message_bytes = "Hello, World!".encode()
         packet = Message(sender_name, message_bytes).to_bytes()

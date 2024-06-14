@@ -1,6 +1,4 @@
-"""
-MessageRequest class test suite
-"""
+"""``MessageRequest`` class test suite."""
 
 import unittest
 
@@ -10,12 +8,10 @@ from src.packets.message_request import MessageRequest
 
 
 class TestMessageRequestEncoding(unittest.TestCase):
-    """
-    Test suite for encoding MessageRequest packets
-    """
+    """Test suite for encoding MessageRequest packets."""
 
     def test_magic_number_encoding(self) -> None:
-        """Tests that the magic number is encoded correctly"""
+        """Tests that the magic number is encoded correctly."""
         message_type = MessageType.READ
         user_name = "Jamie"
         receiver_name = "Jonty"
@@ -29,7 +25,7 @@ class TestMessageRequestEncoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_message_type_encoding(self) -> None:
-        """Tests that the message type is encoded correctly"""
+        """Tests that the message type is encoded correctly."""
         message_type = MessageType.CREATE
         user_name = "Jamie"
         receiver_name = "Jonty"
@@ -43,7 +39,7 @@ class TestMessageRequestEncoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_user_name_length_encoding(self) -> None:
-        """Tests that the length of the user's name is encoded correctly"""
+        """Tests that the length of the user's name is encoded correctly."""
         message_type = MessageType.CREATE
         user_name = "Johnny"
         receiver_name = "Jarod"
@@ -57,7 +53,7 @@ class TestMessageRequestEncoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_receiver_name_length_encoding(self) -> None:
-        """Tests that the length of the receiver's name is encoded correctly"""
+        """Tests that the length of the receiver's name is encoded correctly."""
         message_type = MessageType.CREATE
         user_name = "Jackson"
         receiver_name = "Jake"
@@ -71,7 +67,7 @@ class TestMessageRequestEncoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_message_length_encoding(self) -> None:
-        """Tests that the length of the message is encoded correctly"""
+        """Tests that the length of the message is encoded correctly."""
         message_type = MessageType.CREATE
         user_name = "Jason"
         receiver_name = "Jay"
@@ -85,7 +81,7 @@ class TestMessageRequestEncoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_user_name_encoding(self) -> None:
-        """Tests that the user's name is encoded correctly"""
+        """Tests that the user's name is encoded correctly."""
         message_type = MessageType.CREATE
         user_name = "Jason"
         receiver_name = "Jay"
@@ -99,7 +95,7 @@ class TestMessageRequestEncoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_receiver_name_encoding(self) -> None:
-        """Tests that the receiver's name is encoded correctly"""
+        """Tests that the receiver's name is encoded correctly."""
         message_type = MessageType.CREATE
         user_name = "Jeff"
         receiver_name = "Jesse"
@@ -117,7 +113,7 @@ class TestMessageRequestEncoding(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_message_encoding(self) -> None:
-        """Tests that the message is encoded correctly"""
+        """Tests that the message is encoded correctly."""
         message_type = MessageType.CREATE
         user_name = "Julian"
         receiver_name = "Jimmy"
@@ -134,12 +130,10 @@ class TestMessageRequestEncoding(unittest.TestCase):
 
 
 class TestMessageRequestDecoding(unittest.TestCase):
-    """
-    Test suite for decoding MessageRequest packets
-    """
+    """Test suite for decoding ``MessageRequest`` packets."""
 
     def setUp(self) -> None:
-        """Sets up the test case"""
+        """Set up the testing environment."""
         self.message_type = MessageType.CREATE
         self.user_name = "Jamie"
         self.receiver_name = "Jonty"
@@ -149,57 +143,59 @@ class TestMessageRequestDecoding(unittest.TestCase):
         ).to_bytes()
 
     def test_message_type_decoding(self) -> None:
-        """Tests that the message type is decoded correctly"""
+        """Tests that the message type is decoded correctly."""
         decoded_packet = MessageRequest.decode_packet(self.packet)
         expected = self.message_type
         actual = decoded_packet[0]
         self.assertEqual(expected, actual)
 
     def test_user_name_decoding(self) -> None:
-        """Tests that the user's name is decoded correctly"""
+        """Tests that the user's name is decoded correctly."""
         decoded_packet = MessageRequest.decode_packet(self.packet)
         expected = self.user_name
         actual = decoded_packet[1]
         self.assertEqual(expected, actual)
 
     def test_receiver_name_decoding(self) -> None:
-        """Tests that the receiver's name is decoded correctly"""
+        """Tests that the receiver's name is decoded correctly."""
         decoded_packet = MessageRequest.decode_packet(self.packet)
         expected = self.receiver_name
         actual = decoded_packet[2]
         self.assertEqual(expected, actual)
 
     def test_message_decoding(self) -> None:
-        """Tests that the message is decoded correctly"""
+        """Tests that the message is decoded correctly."""
         decoded_packet = MessageRequest.decode_packet(self.packet)
         expected = self.message
         actual = decoded_packet[3].decode()
         self.assertEqual(expected, actual)
 
     def test_incorrect_magic_number(self) -> None:
-        """Tests that an exception is raised if the magic number is incorrect"""
+        """Tests that an exception is raised if the magic number is incorrect."""
         self.packet = bytearray(self.packet)
         self.packet[0] = 0
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
     def test_invalid_message_type(self) -> None:
-        """Tests that an exception is raised if the message type is invalid"""
+        """Tests that an exception is raised if the message type is invalid."""
         self.packet = bytearray(self.packet)
         self.packet[2] = 0
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
     def test_insufficient_user_name_length(self) -> None:
-        """Tests that an exception is raised if the length of the user's name is zero"""
+        """Tests that an exception is raised if the length of the user's name is zero."""
         self.packet = bytearray(self.packet)
         self.packet[3] = 0
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
     def test_non_zero_receiver_name_length_for_read(self) -> None:
-        """Tests that an exception is raised if the length of
-        the receiver's name is non-zero for a read request"""
+        """Tests that an exception is raised.
+
+        If the length of the receiver's name is non-zero for a read request.
+        """
         self.packet = bytearray(self.packet)
         self.packet[2] = MessageType.READ.value
         self.packet[4] = 1
@@ -207,8 +203,10 @@ class TestMessageRequestDecoding(unittest.TestCase):
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
     def test_non_zero_message_length_for_read(self) -> None:
-        """Tests that an exception is raised if the length of
-        the message is non-zero for a read request"""
+        """Tests that an exception is raised.
+
+        If the length of the message is non-zero for a read request.
+        """
         self.packet = bytearray(self.packet)
         self.packet[2] = MessageType.READ.value
         self.packet[4] = 0
@@ -217,8 +215,10 @@ class TestMessageRequestDecoding(unittest.TestCase):
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
     def test_insufficient_receiver_name_length_for_create(self) -> None:
-        """Tests that an exception is raised if the length of
-        the receiver's name is zero for a create request"""
+        """Tests that an exception is raised.
+
+        If the length of the receiver's name is zero for a create request.
+        """
         self.packet = bytearray(self.packet)
         self.packet[2] = MessageType.CREATE.value
         self.packet[4] = 0
@@ -226,8 +226,10 @@ class TestMessageRequestDecoding(unittest.TestCase):
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
     def test_insufficient_message_length_for_create(self) -> None:
-        """Tests that an exception is raised if the length of
-        the message is zero for a create request"""
+        """Tests that an exception is raised.
+
+        If the length of the message is zero for a create request.
+        """
         self.packet = bytearray(self.packet)
         self.packet[2] = MessageType.CREATE.value
         self.packet[5] = 0
