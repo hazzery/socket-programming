@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class Server(CommandLineApplication):
     """A server side program that receives messages from clients and stores them.
 
-    The server can be run with ``python3 server.py <port number>``.
+    The server can be run with ``python3 -m server <port number>``.
     """
 
     def __init__(self, arguments: list[str]):
