@@ -184,6 +184,13 @@ class TestMessageRequestDecoding(unittest.TestCase):
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
+    def test_response_message_type(self) -> None:
+        """Tests that an exception is raised if the message type is RESPONSE."""
+        self.packet = bytearray(self.packet)
+        self.packet[2] = 3
+
+        self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
+
     def test_insufficient_user_name_length(self) -> None:
         """Tests that an exception is raised if the length of the user's name is zero."""
         self.packet = bytearray(self.packet)
