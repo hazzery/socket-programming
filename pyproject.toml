@@ -17,6 +17,9 @@ classifiers = [
 "Homepage" = "https://github.com/hazzery/socket-programming"
 "Bug Tracker" = "https://github.com/hazzery/socket-programming/issues"
 
+[tool.ruff]
+exclude = ["docs/conf.py"]
+
 [tool.ruff.lint]
 # Enable Pyflakes (`F`), a subset of the pycodestyle (`E`) codes, and  pydocstyle (`D`)
 select = ["E4", "E7", "E9", "F", "D", "PL"]
