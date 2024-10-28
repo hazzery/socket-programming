@@ -1,17 +1,23 @@
-"""
-This module contains the port number type.
-"""
+"""Home to the ``PortNumber`` class."""
 
 
 class PortNumber(int):
-    """
-    Provides functionality to validate a port number.
+    """Provides functionality to validate a port number.
+
+    Port numbers must be within the range 1024-64000 (inclusive).
     """
 
     MINIMUM = 1024
     MAXIMUM = 64000
 
     def __new__(cls, string: str) -> "PortNumber":
+        """Validate that new port number is in allowed range.
+
+        :param string: A string to parse as a port number.
+        :raises TypeError: If the ``string`` cannot be parsed.
+        :raises ValueError: If the number is outside the valid range.
+        :return: A new ``PortNumber``.
+        """
         try:
             value = int(string)
         except ValueError as error:

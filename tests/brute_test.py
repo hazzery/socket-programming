@@ -1,4 +1,5 @@
-"""
+"""Run many many clients to test message limit of 255.
+
 This file is used to test the server with a large number of requests.
 It is not a unit test, but rather a script that executes a large number of
 client requests to test the server's ability to correctly set the `more_messages` flag.

@@ -1,6 +1,4 @@
-"""
-Message type enum class test suite.
-"""
+"""Message type enum class test suite."""
 
 import unittest
 
@@ -8,9 +6,7 @@ from src.message_type import MessageType
 
 
 class TestMessageType(unittest.TestCase):
-    """
-    Test suite for MessageType enum class.
-    """
+    """Test suite for MessageType enum class."""
 
     def test_read_lowercase(self) -> None:
         """Test that read is parsed correctly."""

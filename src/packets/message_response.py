@@ -1,7 +1,5 @@
-"""
-This module contains the MessageResponse class, which is used to encode and decode
-message response packets.
-"""
+"""Home to the ``MessageResponse`` class."""
+
 import logging
 import struct
 
@@ -10,28 +8,31 @@ from src.message_type import MessageType
 from src.packets.packet import Packet
 
 
+logger = logging.getLogger(__name__)
+
+
 class MessageResponse(Packet, struct_format="!HBB?"):
-    """
-    A class for encoding and decoding message response packets
-    """
+    """Enables encoding and decoding message response packets."""
+
+    MAX_MESSAGE_LENGTH = 255
 
     def __init__(self, messages: list[tuple[str, bytes]]):
+        """Encode a structure containing all (up to 255) messages for the specified sender.
+
+        :param messages: A list of all the messages to be put in the structure.
         """
-        Encodes a structure containing all (up to 255) messages for the specified sender
-        :param messages: A list of all the messages to be put in the structure
-        """
-        self.num_messages = min(len(messages), 255)
-        self.more_messages = len(messages) > 255
+        self.num_messages = min(len(messages), MessageResponse.MAX_MESSAGE_LENGTH)
+        self.more_messages = len(messages) > MessageResponse.MAX_MESSAGE_LENGTH
 
         self.messages = messages[: self.num_messages]
         self.packet = bytes()
 
     def to_bytes(self) -> bytes:
+        """Return the message response packet.
+
+        :return: A byte array holding the message response.
         """
-        Returns the message response packet
-        :return: A byte array holding the message response
-        """
-        logging.info("Creating message response for %s message(s)", self.num_messages)
+        logger.info("Creating message response for %s message(s)", self.num_messages)
 
         self.packet = struct.pack(
             self.struct_format,
@@ -43,17 +44,17 @@ class MessageResponse(Packet, struct_format="!HBB?"):
 
         for sender, message in self.messages:
             self.packet += Message(sender, message).to_bytes()
-            logging.info('Encoded message from %s: "%s"', sender, message.decode())
+            logger.info('Encoded message from %s: "%s"', sender, message.decode())
 
         return self.packet
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[list[tuple[str, str]], bool]:
-        """
-        Decodes a message response packet into its individual components
-        :param packet: The packet to be decoded
+        """Decode a message response packet into its individual components.
+
+        :param packet: The packet to be decoded.
         :return: A tuple containing a list of messages and a boolean
-            indicating whether there are more messages to be received
+            indicating whether there are more messages to be received.
         """
         header_fields, payload = cls.split_packet(packet)
         magic_number, message_type, num_messages, more_messages = header_fields
@@ -79,7 +80,7 @@ class MessageResponse(Packet, struct_format="!HBB?"):
             sender_name, message, remaining_messages = Message.decode_packet(
                 remaining_messages
             )
-            logging.info('Decoded message from %s: "%s"', sender_name, message)
+            logger.info('Decoded message from %s: "%s"', sender_name, message)
             messages.append((sender_name, message))
 
         return messages, more_messages
