@@ -1,8 +1,8 @@
 """Home to the ``Packet`` abstract class."""
 
-from typing import Any
-import struct
 import abc
+import struct
+from typing import Any
 
 
 class Packet(metaclass=abc.ABCMeta):
@@ -23,7 +23,7 @@ class Packet(metaclass=abc.ABCMeta):
     struct_format: str
 
     @abc.abstractmethod
-    def __init__(self, *args: tuple[Any, ...]):
+    def __init__(self, *args: tuple[Any, ...]) -> None:
         """Initialise the packet.
 
         :param args: All arguments needed to initialise the packet.
@@ -66,7 +66,9 @@ class Packet(metaclass=abc.ABCMeta):
 
     @classmethod
     def __init_subclass__(
-        cls, struct_format: str | None = None, **kwargs: tuple[Any, ...]
+        cls,
+        struct_format: str | None = None,
+        **kwargs: tuple[Any, ...],
     ) -> None:
         """Ensure ``struct_format`` attribute is present.
 

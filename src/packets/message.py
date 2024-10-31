@@ -1,7 +1,4 @@
-"""Home to the ``Message`` class.
-
-which is used to encode and decode
-"""
+"""Home to the ``Message`` class."""
 
 import struct
 
@@ -15,7 +12,7 @@ class Message(Packet, struct_format="!BH"):
     a MessageResponse packet.
     """
 
-    def __init__(self, sender_name: str, message: bytes):
+    def __init__(self, sender_name: str, message: bytes) -> None:
         """Create the Message which can be encoded into a packet.
 
         :param sender_name: The name of the user sending this message.
@@ -23,7 +20,7 @@ class Message(Packet, struct_format="!BH"):
         """
         self.sender_name = sender_name
         self.message = message
-        self.packet = bytes()
+        self.packet = b""
 
     def to_bytes(self) -> bytes:
         """Encode the message into bytes for transmission through a socket.
@@ -31,7 +28,9 @@ class Message(Packet, struct_format="!BH"):
         :return: A ``bytes`` object encoding the message.
         """
         self.packet += struct.pack(
-            self.struct_format, len(self.sender_name.encode()), len(self.message)
+            self.struct_format,
+            len(self.sender_name.encode()),
+            len(self.message),
         )
         self.packet += self.sender_name.encode()
         self.packet += self.message

@@ -7,8 +7,8 @@ import logging
 import sys
 
 from logging_config import configure_logging
-from .server import Server
 
+from .server import Server
 
 logger = logging.getLogger(__name__)
 

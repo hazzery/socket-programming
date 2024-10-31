@@ -1,13 +1,13 @@
 """Home to the ``Server`` class."""
 
-from collections import OrderedDict
 import logging
 import socket
+from collections import OrderedDict
 
 from src.command_line_application import CommandLineApplication
-from src.packets.message_response import MessageResponse
-from src.packets.message_request import MessageRequest
 from src.message_type import MessageType
+from src.packets.message_request import MessageRequest
+from src.packets.message_response import MessageResponse
 from src.port_number import PortNumber
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class Server(CommandLineApplication):
     The server can be run with ``python3 -m server <port number>``.
     """
 
-    def __init__(self, arguments: list[str]):
+    def __init__(self, arguments: list[str]) -> None:
         """Initialise the server with a specified port number.
 
         :param arguments: The program arguments from the command line.
@@ -46,7 +46,9 @@ class Server(CommandLineApplication):
                 # A maximum, of five unprocessed connections are allowed
                 welcoming_socket.listen(5)
                 logger.info(
-                    "Server started on %s port %s", self.hostname, self.port_number
+                    "Server started on %s port %s",
+                    self.hostname,
+                    self.port_number,
                 )
                 print(f"starting up on {self.hostname} port {self.port_number}")
 
@@ -54,12 +56,15 @@ class Server(CommandLineApplication):
                     self.run_server(welcoming_socket)
 
         except OSError as error:
-            logger.error(error)
-            print("Error binding socket on provided port")
+            message = "Error binding socket on provided port"
+            logger.exception(message)
+            print(message)
             raise SystemExit from error
 
     def process_read_request(
-        self, connection_socket: socket.socket, sender_name: str
+        self,
+        connection_socket: socket.socket,
+        sender_name: str,
     ) -> None:
         """Respond to read requests.
 
@@ -79,7 +84,10 @@ class Server(CommandLineApplication):
         print(f"{response.num_messages} message(s) delivered to {sender_name}")
 
     def process_create_request(
-        self, sender_name: str, receiver_name: str, message: bytes
+        self,
+        sender_name: str,
+        receiver_name: str,
+        message: bytes,
     ) -> None:
         """Process `create` requests.
 
@@ -99,7 +107,7 @@ class Server(CommandLineApplication):
         )
         print(
             f"{sender_name} sends the message "
-            f'"{message.decode()}" to {receiver_name}'
+            f'"{message.decode()}" to {receiver_name}',
         )
 
     def run_server(self, welcoming_socket: socket.socket) -> None:
@@ -125,9 +133,11 @@ class Server(CommandLineApplication):
                 elif message_type == MessageType.CREATE:
                     self.process_create_request(sender_name, receiver_name, message)
 
-        except socket.timeout as error:
-            logger.error(error)
-            print("Timed out while waiting for message request")
-        except ValueError as error:
-            logger.error(error)
-            print("Message request discarded")
+        except TimeoutError:
+            error_message = "Timed out while waiting for message request"
+            logger.exception(error_message)
+            print(error_message)
+        except ValueError:
+            error_message = "Message request discarded"
+            logger.exception(error_message)
+            print(error_message)

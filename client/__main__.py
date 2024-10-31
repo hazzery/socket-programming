@@ -6,6 +6,7 @@ Run with ``python3 -m client <host name> <port number> <username> <message_type>
 import sys
 
 from logging_config import configure_logging
+
 from .client import Client
 
 

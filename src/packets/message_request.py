@@ -4,8 +4,8 @@ import logging
 import struct
 
 from src.message_type import MessageType
-from .packet import Packet
 
+from .packet import Packet
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
     """Encoding and decoding of message request packets.
 
     Usage:
-        message_request = MessageRequest(MessageType.CREATE, "sender_name", "receiver_name", "Hi")
+        message_request = MessageRequest(MessageType.CREATE, "sender", "receiver", "Hi")
         record = message_request.to_bytes()
 
         message_request = MessageRequest.from_record(record)
@@ -27,7 +27,7 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         user_name: str,
         receiver_name: str,
         message: str,
-    ):
+    ) -> None:
         """Encode a message request packet.
 
         :param message_type: The type of the request (READ or CREATE)
@@ -39,7 +39,7 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         self.user_name = user_name
         self.receiver_name = receiver_name
         self.message = message
-        self.packet = bytes()
+        self.packet = b""
 
     def to_bytes(self) -> bytes:
         """Return the message request packet.
@@ -71,6 +71,7 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
 
         return self.packet
 
+    # ruff: noqa: C901
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[MessageType, str, str, bytes]:
         """Decode a message request packet.
@@ -99,13 +100,13 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
 
         if user_name_size < 1:
             raise ValueError(
-                "Received message request with insufficient user name length"
+                "Received message request with insufficient user name length",
             )
 
         if message_type == MessageType.READ:
             if receiver_name_size != 0:
                 raise ValueError(
-                    "Received read request with non-zero receiver name length"
+                    "Received read request with non-zero receiver name length",
                 )
             if message_size != 0:
                 raise ValueError("Received read request with non-zero message length")
@@ -113,11 +114,11 @@ class MessageRequest(Packet, struct_format="!HBBBH"):
         elif message_type == MessageType.CREATE:
             if receiver_name_size < 1:
                 raise ValueError(
-                    "Received create request with insufficient receiver name length"
+                    "Received create request with insufficient receiver name length",
                 )
             if message_size < 1:
                 raise ValueError(
-                    "Received create request with insufficient message length"
+                    "Received create request with insufficient message length",
                 )
 
         user_name = payload[:user_name_size].decode()

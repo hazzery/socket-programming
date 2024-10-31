@@ -3,10 +3,9 @@
 import logging
 import struct
 
-from src.packets.message import Message
 from src.message_type import MessageType
+from src.packets.message import Message
 from src.packets.packet import Packet
-
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +15,8 @@ class MessageResponse(Packet, struct_format="!HBB?"):
 
     MAX_MESSAGE_LENGTH = 255
 
-    def __init__(self, messages: list[tuple[str, bytes]]):
-        """Encode a structure containing all (up to 255) messages for the specified sender.
+    def __init__(self, messages: list[tuple[str, bytes]]) -> None:
+        """Encode a structure containing up to 255 messages for a specific sender.
 
         :param messages: A list of all the messages to be put in the structure.
         """
@@ -25,7 +24,7 @@ class MessageResponse(Packet, struct_format="!HBB?"):
         self.more_messages = len(messages) > MessageResponse.MAX_MESSAGE_LENGTH
 
         self.messages = messages[: self.num_messages]
-        self.packet = bytes()
+        self.packet = b""
 
     def to_bytes(self) -> bytes:
         """Return the message response packet.
@@ -66,19 +65,20 @@ class MessageResponse(Packet, struct_format="!HBB?"):
             message_type = MessageType(message_type)
         except ValueError as error:
             raise ValueError(
-                "Invalid message type when decoding message response"
+                "Invalid message type when decoding message response",
             ) from error
         if message_type != MessageType.RESPONSE:
-            raise ValueError(
-                f"Message type {message_type} found when decoding message response, "
-                "expected RESPONSE"
+            message = (
+                f"Message type {message_type} found when decoding message"
+                " response, expected RESPONSE"
             )
+            raise ValueError(message)
 
         messages: list[tuple[str, str]] = []
         remaining_messages = payload
         for _ in range(num_messages):
             sender_name, message, remaining_messages = Message.decode_packet(
-                remaining_messages
+                remaining_messages,
             )
             logger.info('Decoded message from %s: "%s"', sender_name, message)
             messages.append((sender_name, message))

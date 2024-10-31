@@ -1,16 +1,14 @@
 """The client module contains the Client class."""
 
-from collections import OrderedDict
-from typing import Optional
 import logging
 import socket
+from collections import OrderedDict
 
 from src.command_line_application import CommandLineApplication
-from src.packets.message_response import MessageResponse
-from src.packets.message_request import MessageRequest
 from src.message_type import MessageType
+from src.packets.message_request import MessageRequest
+from src.packets.message_response import MessageResponse
 from src.port_number import PortNumber
-
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +18,7 @@ class Client(CommandLineApplication):
 
     MAX_USERNAME_LENGTH = 255
 
-    def __init__(self, arguments: list[str]):
+    def __init__(self, arguments: list[str]) -> None:
         """Initialise the client with specified arguments.
 
         :param arguments: A list containing the host name, port number
@@ -32,7 +30,7 @@ class Client(CommandLineApplication):
                 port_number=PortNumber,
                 user_name=self.parse_username,
                 message_type=MessageType.from_str,
-            )
+            ),
         )
 
         # pylint thinks that self.parse_arguments is only capable
@@ -67,11 +65,11 @@ class Client(CommandLineApplication):
         try:
             socket.getaddrinfo(host_name, 1024)
         except socket.gaierror as error:
-            logger.error(error)
-            raise ValueError(
-                "Invalid host name, must be an IP address, domain name,"
-                ' or "localhost"'
-            ) from error
+            message = (
+                'Invalid host name, must be an IP address, domain name, or "localhost"'
+            )
+            logger.exception(message)
+            raise ValueError(message) from error
 
         return host_name
 
@@ -93,7 +91,7 @@ class Client(CommandLineApplication):
 
         return user_name
 
-    def send_message_request(self, request: MessageRequest) -> Optional[bytes]:
+    def send_message_request(self, request: MessageRequest) -> bytes | None:
         """Send a message request record to the server.
 
         :param request: The message request to be sent.
@@ -110,16 +108,19 @@ class Client(CommandLineApplication):
                     response = connection_socket.recv(4096)
 
         except ConnectionRefusedError as error:
-            logger.error(error)
+            logger.exception("Connection refused, likely due to invalid port number")
             print("Connection refused, likely due to invalid port number")
             raise SystemExit from error
-        except socket.timeout as error:
-            logger.error(error)
-            print("Connection timed out, likely due to invalid host name")
+        except TimeoutError as error:
+            message = "Connection timed out, likely due to invalid host name"
+            logger.exception(message)
+            print(message)
             raise SystemExit from error
 
         logger.info(
-            "%s record sent as %s", self.message_type.name.lower(), self.user_name
+            "%s record sent as %s",
+            self.message_type.name.lower(),
+            self.user_name,
         )
         print(f"{self.message_type.name.lower()} record sent as {self.user_name}")
 
@@ -150,11 +151,16 @@ class Client(CommandLineApplication):
             self.receiver_name = input("Enter the name of the receiver: ")
             self.message = input("Enter the message to be sent: ")
             logger.info(
-                'User specified message to %s: "%s"', self.receiver_name, self.message
+                'User specified message to %s: "%s"',
+                self.receiver_name,
+                self.message,
             )
 
         request = MessageRequest(
-            self.message_type, self.user_name, self.receiver_name, self.message
+            self.message_type,
+            self.user_name,
+            self.receiver_name,
+            self.message,
         )
         response = self.send_message_request(request)
         if self.message_type == MessageType.READ and response:

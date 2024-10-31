@@ -1,31 +1,26 @@
-"""
-Login request module.
+"""Login request module.
+
 Defines the LoginRequest class which is used to encode and decode login request packets.
 """
-from typing import Any
+
 import logging
 import struct
+from typing import Any
 
 from src.message_type import MessageType
 from src.packets.packet import Packet
 
 
 class LoginRequest(Packet, struct_format="!HBB"):
-    """
-    The LoginRequest class is used to encode and decode login request packets.
-    """
+    """The LoginRequest class is used to encode and decode login request packets."""
 
-    def __init__(self, user_name: str):
-        """
-        Create a login request packet
-        """
+    def __init__(self, user_name: str) -> None:
+        """Create a login request packet."""
         self.user_name = user_name
-        self.packet = bytes()
+        self.packet = b""
 
     def to_bytes(self) -> bytes:
-        """
-        Encode the login request packet into a byte array
-        """
+        """Encode the login request packet into a byte array."""
         logging.info("Creating log-in request as %s", self.user_name)
 
         self.packet = struct.pack(
@@ -41,8 +36,8 @@ class LoginRequest(Packet, struct_format="!HBB"):
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[Any, ...]:
-        """
-        Decode the login request packet into its individual components
+        """Decode the login request packet into its individual components.
+
         :param packet: The packet to be decoded
         :return: A tuple containing the username
         """
@@ -56,13 +51,15 @@ class LoginRequest(Packet, struct_format="!HBB"):
             message_type = MessageType(message_type)
         except ValueError as error:
             raise ValueError(
-                "Invalid message type when decoding message response"
+                "Invalid message type when decoding message response",
             ) from error
         if message_type != MessageType.LOGIN:
-            raise ValueError(
-                f"Message type {message_type} found when decoding message response, "
-                "expected LOGIN"
+            message = (
+                f"Message type {message_type} found when decoding"
+                " message response, expected LOGIN"
             )
+
+            raise ValueError(message)
 
         user_name = payload.decode()
 
