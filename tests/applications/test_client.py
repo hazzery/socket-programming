@@ -1,11 +1,11 @@
 """Client class test suite."""
 
-import unittest
 import socket
+import unittest
 
-from src.packets.message_request import MessageRequest
-from src.message_type import MessageType
 from client import Client
+from src.message_type import MessageType
+from src.packets.message_request import MessageRequest
 
 
 class TestClient(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestClient(unittest.TestCase):
         Client([TestClient.hostname, str(TestClient.port_number), "Alice", "create"])
 
     def test_construction_raise_error(self) -> None:
-        """Tests that a Client object cannot be constructed given an invalid arguments."""
+        """Tests that a Client object cannot be constructed given invalid arguments."""
         self.assertRaises(
             SystemExit,
             Client,
@@ -29,7 +29,7 @@ class TestClient(unittest.TestCase):
     def test_send_message_request(self) -> None:
         """Tests that a Client object can send a message request."""
         client = Client(
-            [TestClient.hostname, str(TestClient.port_number), "Alice", "create"]
+            [TestClient.hostname, str(TestClient.port_number), "Alice", "create"],
         )
         user_name = "Alice"
         receiver_name = "John"
@@ -42,7 +42,7 @@ class TestClient(unittest.TestCase):
 
             # Send message request from the client
             client.send_message_request(
-                MessageRequest(MessageType.CREATE, user_name, receiver_name, message)
+                MessageRequest(MessageType.CREATE, user_name, receiver_name, message),
             )
 
             # Accept connection from the client
@@ -56,5 +56,6 @@ class TestClient(unittest.TestCase):
         # Check that the packet is correct
         request = MessageRequest.decode_packet(packet)
         self.assertEqual(
-            (MessageType.CREATE, user_name, receiver_name, message.encode()), request
+            (MessageType.CREATE, user_name, receiver_name, message.encode()),
+            request,
         )

@@ -11,7 +11,7 @@ class TestMessage(unittest.TestCase):
     def test_sender_length_encoding(self) -> None:
         """Tests that the length of the sender's name is encoded correctly."""
         sender_name = "John"
-        message_bytes = "Hello, World!".encode()
+        message_bytes = b"Hello, World!"
         packet = Message(sender_name, message_bytes).to_bytes()
 
         expected = len(sender_name.encode())
@@ -21,7 +21,7 @@ class TestMessage(unittest.TestCase):
     def test_message_length_encoding(self) -> None:
         """Tests that the length of the message is encoded correctly."""
         sender_name = "Jack"
-        message_bytes = "Hello, World!".encode()
+        message_bytes = b"Hello, World!"
         packet = Message(sender_name, message_bytes).to_bytes()
 
         expected = len(message_bytes)
@@ -31,7 +31,7 @@ class TestMessage(unittest.TestCase):
     def test_sender_name_encoding(self) -> None:
         """Tests that the sender's name is encoded correctly."""
         sender_name = "Jacob"
-        message_bytes = "Hello, World!".encode()
+        message_bytes = b"Hello, World!"
         packet = Message(sender_name, message_bytes).to_bytes()
 
         expected = sender_name
@@ -41,7 +41,7 @@ class TestMessage(unittest.TestCase):
     def test_message_encoding(self) -> None:
         """Tests that the message is encoded correctly."""
         sender_name = "James"
-        message_bytes = "Hello, World!".encode()
+        message_bytes = b"Hello, World!"
         packet = Message(sender_name, message_bytes).to_bytes()
 
         starting_index = 3 + len(sender_name.encode())

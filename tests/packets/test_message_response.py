@@ -2,9 +2,9 @@
 
 import unittest
 
-from src.packets.packet import Packet
 from src.message_type import MessageType
 from src.packets.message_response import MessageResponse
+from src.packets.packet import Packet
 
 
 class TestMessageResponseEncoding(unittest.TestCase):
@@ -31,8 +31,8 @@ class TestMessageResponseEncoding(unittest.TestCase):
     def test_num_messages_encoding(self) -> None:
         """Tests that the number of messages is encoded correctly."""
         messages = [
-            ("Harry", "Hello John!".encode()),
-            ("John", "Hello Harry!".encode()),
+            ("Harry", b"Hello John!"),
+            ("John", b"Hello Harry!"),
         ]
         packet = MessageResponse(messages).to_bytes()
 
@@ -56,8 +56,8 @@ class TestMessageResponseDecoding(unittest.TestCase):
     def test_messages_decoding(self) -> None:
         """Tests that the messages are decoded correctly."""
         messages = [
-            ("Harry", "Hello John!".encode()),
-            ("John", "Hello Harry!".encode()),
+            ("Harry", b"Hello John!"),
+            ("John", b"Hello Harry!"),
         ]
         packet = MessageResponse(messages).to_bytes()
 
@@ -71,8 +71,8 @@ class TestMessageResponseDecoding(unittest.TestCase):
     def test_more_messages_decoding_false(self) -> None:
         """Tests that the more messages flag is decoded correctly."""
         messages = [
-            ("Harry", "Hello John!".encode()),
-            ("John", "Hello Harry!".encode()),
+            ("Harry", b"Hello John!"),
+            ("John", b"Hello Harry!"),
         ]
         packet = MessageResponse(messages).to_bytes()
 
@@ -82,7 +82,7 @@ class TestMessageResponseDecoding(unittest.TestCase):
 
     def test_more_messages_decoding_true(self) -> None:
         """Tests that the more messages flag is decoded correctly."""
-        messages = [("Harry", "Hello John!".encode())] * 256
+        messages = [("Harry", b"Hello John!")] * 256
         packet = MessageResponse(messages).to_bytes()
 
         expected = True

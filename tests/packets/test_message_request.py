@@ -2,9 +2,9 @@
 
 import unittest
 
-from src.packets.packet import Packet
 from src.message_type import MessageType
 from src.packets.message_request import MessageRequest
+from src.packets.packet import Packet
 
 
 class TestMessageRequestEncoding(unittest.TestCase):
@@ -17,7 +17,10 @@ class TestMessageRequestEncoding(unittest.TestCase):
         receiver_name = "Jonty"
         message = "Hello, World!"
         packet = MessageRequest(
-            message_type, user_name, receiver_name, message
+            message_type,
+            user_name,
+            receiver_name,
+            message,
         ).to_bytes()
 
         expected = Packet.MAGIC_NUMBER
@@ -31,7 +34,10 @@ class TestMessageRequestEncoding(unittest.TestCase):
         receiver_name = "Jonty"
         message = "Hello, World!"
         packet = MessageRequest(
-            message_type, user_name, receiver_name, message
+            message_type,
+            user_name,
+            receiver_name,
+            message,
         ).to_bytes()
 
         expected = message_type.value
@@ -45,7 +51,10 @@ class TestMessageRequestEncoding(unittest.TestCase):
         receiver_name = "Jarod"
         message = "Hello, World!"
         packet = MessageRequest(
-            message_type, user_name, receiver_name, message
+            message_type,
+            user_name,
+            receiver_name,
+            message,
         ).to_bytes()
 
         expected = len(user_name.encode())
@@ -59,7 +68,10 @@ class TestMessageRequestEncoding(unittest.TestCase):
         receiver_name = "Jake"
         message = "Hello, World!"
         packet = MessageRequest(
-            message_type, user_name, receiver_name, message
+            message_type,
+            user_name,
+            receiver_name,
+            message,
         ).to_bytes()
 
         expected = len(receiver_name.encode())
@@ -73,7 +85,10 @@ class TestMessageRequestEncoding(unittest.TestCase):
         receiver_name = "Jay"
         message = "Hello, World!"
         packet = MessageRequest(
-            message_type, user_name, receiver_name, message
+            message_type,
+            user_name,
+            receiver_name,
+            message,
         ).to_bytes()
 
         expected = len(message.encode())
@@ -87,7 +102,10 @@ class TestMessageRequestEncoding(unittest.TestCase):
         receiver_name = "Jay"
         message = "Hello, World!"
         packet = MessageRequest(
-            message_type, user_name, receiver_name, message
+            message_type,
+            user_name,
+            receiver_name,
+            message,
         ).to_bytes()
 
         expected = user_name
@@ -101,7 +119,10 @@ class TestMessageRequestEncoding(unittest.TestCase):
         receiver_name = "Jesse"
         message = "Hello, World!"
         packet = MessageRequest(
-            message_type, user_name, receiver_name, message
+            message_type,
+            user_name,
+            receiver_name,
+            message,
         ).to_bytes()
 
         start_index = 7 + len(user_name.encode())
@@ -119,7 +140,10 @@ class TestMessageRequestEncoding(unittest.TestCase):
         receiver_name = "Jimmy"
         message = "Hello, World!"
         packet = MessageRequest(
-            message_type, user_name, receiver_name, message
+            message_type,
+            user_name,
+            receiver_name,
+            message,
         ).to_bytes()
 
         start_index = 7 + len(user_name.encode()) + len(receiver_name.encode())
@@ -139,7 +163,10 @@ class TestMessageRequestDecoding(unittest.TestCase):
         self.receiver_name = "Jonty"
         self.message = "Hello, World!"
         self.packet = MessageRequest(
-            self.message_type, self.user_name, self.receiver_name, self.message
+            self.message_type,
+            self.user_name,
+            self.receiver_name,
+            self.message,
         ).to_bytes()
 
     def test_message_type_decoding(self) -> None:
@@ -172,29 +199,33 @@ class TestMessageRequestDecoding(unittest.TestCase):
 
     def test_incorrect_magic_number(self) -> None:
         """Tests that an exception is raised if the magic number is incorrect."""
-        self.packet = bytearray(self.packet)
-        self.packet[0] = 0
+        packet = bytearray(self.packet)
+        packet[0] = 0
+        self.packet = bytes(packet)
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
     def test_invalid_message_type(self) -> None:
         """Tests that an exception is raised if the message type is invalid."""
-        self.packet = bytearray(self.packet)
-        self.packet[2] = 0
+        packet = bytearray(self.packet)
+        packet[2] = 0
+        self.packet = bytes(packet)
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
     def test_response_message_type(self) -> None:
         """Tests that an exception is raised if the message type is RESPONSE."""
-        self.packet = bytearray(self.packet)
-        self.packet[2] = 3
+        packet = bytearray(self.packet)
+        packet[2] = 3
+        self.packet = bytes(packet)
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
     def test_insufficient_user_name_length(self) -> None:
-        """Tests that an exception is raised if the length of the user's name is zero."""
-        self.packet = bytearray(self.packet)
-        self.packet[3] = 0
+        """Tests that an exception is raised if the user's name has a length of zero."""
+        packet = bytearray(self.packet)
+        packet[3] = 0
+        self.packet = bytes(packet)
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
@@ -203,9 +234,10 @@ class TestMessageRequestDecoding(unittest.TestCase):
 
         If the length of the receiver's name is non-zero for a read request.
         """
-        self.packet = bytearray(self.packet)
-        self.packet[2] = MessageType.READ.value
-        self.packet[4] = 1
+        packet = bytearray(self.packet)
+        packet[2] = MessageType.READ.value
+        packet[4] = 1
+        self.packet = bytes(packet)
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
@@ -214,10 +246,11 @@ class TestMessageRequestDecoding(unittest.TestCase):
 
         If the length of the message is non-zero for a read request.
         """
-        self.packet = bytearray(self.packet)
-        self.packet[2] = MessageType.READ.value
-        self.packet[4] = 0
-        self.packet[6] = 1
+        packet = bytearray(self.packet)
+        packet[2] = MessageType.READ.value
+        packet[4] = 0
+        packet[6] = 1
+        self.packet = bytes(packet)
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
@@ -226,9 +259,10 @@ class TestMessageRequestDecoding(unittest.TestCase):
 
         If the length of the receiver's name is zero for a create request.
         """
-        self.packet = bytearray(self.packet)
-        self.packet[2] = MessageType.CREATE.value
-        self.packet[4] = 0
+        packet = bytearray(self.packet)
+        packet[2] = MessageType.CREATE.value
+        packet[4] = 0
+        self.packet = bytes(packet)
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)
 
@@ -237,9 +271,10 @@ class TestMessageRequestDecoding(unittest.TestCase):
 
         If the length of the message is zero for a create request.
         """
-        self.packet = bytearray(self.packet)
-        self.packet[2] = MessageType.CREATE.value
-        self.packet[5] = 0
-        self.packet[6] = 0
+        packet = bytearray(self.packet)
+        packet[2] = MessageType.CREATE.value
+        packet[5] = 0
+        packet[6] = 0
+        self.packet = bytes(packet)
 
         self.assertRaises(ValueError, MessageRequest.decode_packet, self.packet)

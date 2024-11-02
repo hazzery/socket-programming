@@ -1,10 +1,10 @@
 """Server class test suite."""
 
-import unittest
 import socket
+import unittest
 
-from src.packets.message_response import MessageResponse
 from server import Server
+from src.packets.message_response import MessageResponse
 
 
 class TestServer(unittest.TestCase):
@@ -18,9 +18,11 @@ class TestServer(unittest.TestCase):
         Server([str(TestServer.port_number)])
 
     def test_construction_raise_error(self) -> None:
-        """.Tests that a Server object cannot be constructed given an invalid arguments."""
+        """Tests that a Server object cannot be constructed given invalid arguments."""
         self.assertRaises(
-            SystemExit, Server, [str(TestServer.port_number), "Extra argument"]
+            SystemExit,
+            Server,
+            [str(TestServer.port_number), "Extra argument"],
         )
 
     def test_process_read_request(self) -> None:
