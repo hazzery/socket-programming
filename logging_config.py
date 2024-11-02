@@ -39,7 +39,7 @@ def configure_logging(package_name: str) -> None:
     # ruff: noqa: DTZ005
     file_name = datetime.datetime.now().strftime("%d-%m-%y %H:%M:%S")
 
-    (pathlib.Path("logs") / package_name).parent.mkdir(parents=True)
+    (pathlib.Path("logs") / package_name).parent.mkdir(parents=True, exist_ok=True)
     file_handler = logging.FileHandler(f"logs/{package_name}/{file_name}.log")
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
