@@ -53,6 +53,7 @@ class Client(CommandLineApplication):
 
         self.receiver_name = ""
         self.message = ""
+        self.response: bytes | None = None
 
     @staticmethod
     def parse_hostname(host_name: str) -> str:
@@ -145,11 +146,24 @@ class Client(CommandLineApplication):
             logger.info("Server has more messages available for this user")
             print("More messages available, please send another request")
 
-    def run(self) -> None:
+    def run(
+        self,
+        *,
+        receiver_name: str | None = None,
+        message: str | None = None,
+    ) -> None:
         """Ask the user to input message and send request to server."""
         if self.message_type == MessageType.CREATE:
-            self.receiver_name = input("Enter the name of the receiver: ")
-            self.message = input("Enter the message to be sent: ")
+            if receiver_name is None:
+                self.receiver_name = input("Enter the name of the receiver: ")
+            else:
+                self.receiver_name = receiver_name
+
+            if message is None:
+                self.message = input("Enter the message to be sent: ")
+            else:
+                self.message = message
+
             logger.info(
                 'User specified message to %s: "%s"',
                 self.receiver_name,
@@ -162,6 +176,23 @@ class Client(CommandLineApplication):
             self.receiver_name,
             self.message,
         )
-        response = self.send_message_request(request)
-        if self.message_type == MessageType.READ and response:
-            self.read_message_response(response)
+        self.response = self.send_message_request(request)
+        if self.message_type == MessageType.READ and self.response:
+            self.read_message_response(self.response)
+
+    @property
+    def result(self) -> bytes:
+        """Get the packet received from the server.
+
+        This property must only be used after calling ``run()``
+        otherwise no response will exist!
+
+        :raises RuntimeError: When there was no response.
+        Will always occur if requested before call to ``run()``.
+
+        :return: A bytes object of the server's response.
+        """
+        if self.response is None:
+            raise RuntimeError("No response! Was result requested after call to run()?")
+
+        return self.response

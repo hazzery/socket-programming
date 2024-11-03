@@ -31,6 +31,7 @@ class Server(CommandLineApplication):
         # pylint: disable=unbalanced-tuple-unpacking
         (self.port_number,) = self.parse_arguments(arguments)
 
+        self.running = True
         self.hostname = "localhost"
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
@@ -42,6 +43,7 @@ class Server(CommandLineApplication):
         try:
             # Create a TCP/IP socket
             with socket.socket() as welcoming_socket:
+                welcoming_socket.settimeout(1)
                 welcoming_socket.bind((self.hostname, self.port_number))
                 # A maximum, of five unprocessed connections are allowed
                 welcoming_socket.listen(5)
@@ -52,7 +54,7 @@ class Server(CommandLineApplication):
                 )
                 print(f"starting up on {self.hostname} port {self.port_number}")
 
-                while True:
+                while self.running:
                     self.run_server(welcoming_socket)
 
         except OSError as error:
@@ -115,7 +117,11 @@ class Server(CommandLineApplication):
 
         :param welcoming_socket: The welcoming socket to accept connections on
         """
-        connection_socket, client_address = welcoming_socket.accept()
+        try:
+            connection_socket, client_address = welcoming_socket.accept()
+        except TimeoutError:
+            return
+
         connection_socket.settimeout(1)
 
         logger.info("New client connection from %s", client_address)
@@ -141,3 +147,8 @@ class Server(CommandLineApplication):
             error_message = "Message request discarded"
             logger.exception(error_message)
             print(error_message)
+
+    def stop(self) -> None:
+        """Stop the server."""
+        print("Stopping server.")
+        self.running = False
