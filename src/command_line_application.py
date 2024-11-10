@@ -39,8 +39,10 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
         :param arguments: The command line arguments.
         """
         if len(arguments) != len(self.parameters):
+            message = f"Invalid number of arguments, must be {len(self.parameters)}"
             print(self.usage_prompt)
-            print(f"Invalid number of arguments, must be {len(self.parameters)}")
+            print(message)
+            raise SystemExit(message)
 
         try:
             parsed_arguments = [
@@ -48,10 +50,10 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
                 for argument, parser in zip(
                     arguments,
                     self.parameters.values(),
-                    strict=True,
+                    strict=False,
                 )
             ]
-        except (ValueError, TypeError) as error:
+        except TypeError as error:
             logger.exception("Incorrect arguments")
             print(self.usage_prompt)
             print(error)
