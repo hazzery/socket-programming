@@ -21,7 +21,6 @@ class LoginResponse(Packet, struct_format="!HB?QQ"):
         :param is_registered: ``True`` if the requesting user was registered.
         :param encryption_key: An RSA public key for encrypting messages.
         """
-        """Create a new login response packet."""
         self.encryption_key = encryption_key
         self.is_registered = is_registered
         self.packet = b""
