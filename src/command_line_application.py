@@ -33,7 +33,7 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
         """
         return f"Usage: python3 {' '.join(self.parameters)}"
 
-    def parse_arguments(self, arguments: list[str]) -> list[Any]:
+    def parse_arguments(self, arguments: list[str]) -> tuple[Any, ...]:
         """Parse the command line arguments, ensuring they are valid.
 
         :param arguments: The command line arguments.
@@ -45,14 +45,14 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
             raise SystemExit(message)
 
         try:
-            parsed_arguments = [
+            parsed_arguments = tuple(
                 parser(argument)
                 for argument, parser in zip(
                     arguments,
                     self.parameters.values(),
                     strict=False,
                 )
-            ]
+            )
         except TypeError as error:
             logger.exception("Incorrect arguments")
             print(self.usage_prompt)
