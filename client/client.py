@@ -23,8 +23,8 @@ class Client(CommandLineApplication):
     def __init__(self, arguments: list[str]) -> None:
         """Initialise the client with specified arguments.
 
-        :param arguments: A list containing the host name, port number
-        , username, and message type.
+        :param arguments: A list containing the host name, port number,
+        username, and message type.
         """
         super().__init__(
             OrderedDict(
@@ -35,15 +35,12 @@ class Client(CommandLineApplication):
             ),
         )
 
-        # pylint thinks that self.parse_arguments is only capable
-        # of returning an empty list
-        # pylint: disable=unbalanced-tuple-unpacking
-        (
-            self.host_name,
-            self.port_number,
-            self.user_name,
-            self.message_type,
-        ) = self.parse_arguments(arguments)
+        parsed_arguments: tuple[str, PortNumber, str, MessageType]
+        parsed_arguments = self.parse_arguments(arguments)
+
+        self.host_name, self.port_number, self.user_name, self.message_type = (
+            parsed_arguments
+        )
 
         logger.info(
             "Client for %s port %s created by %s to send %s request",
