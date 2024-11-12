@@ -53,7 +53,7 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
                     strict=False,
                 )
             )
-        except TypeError as error:
+        except (ValueError, TypeError) as error:
             logger.exception("Incorrect arguments")
             print(self.usage_prompt)
             print(error)
