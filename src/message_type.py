@@ -12,6 +12,8 @@ class MessageType(Enum):
     LOGIN = 4
     REGISTER = 5
     MESSAGE = 6
+    KEY_REQUEST = 7
+    KEY_RESPONSE = 8
 
     @staticmethod
     def from_str(string: str) -> "MessageType":
@@ -23,5 +25,5 @@ class MessageType(Enum):
         try:
             return MessageType[string.upper()]
         except KeyError as error:
-            message = f'Invalid message type: {string}, must be "read" or "create"'
+            message = f"Invalid message type: {string}"
             raise ValueError(message) from error

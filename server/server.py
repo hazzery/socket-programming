@@ -3,13 +3,21 @@
 import logging
 import socket
 from collections import OrderedDict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from message_cipher.rsa_encrypter import RsaEncrypter
 
 from src.command_line_application import CommandLineApplication
 from src.message_type import MessageType
 from src.packets.create_request import CreateRequest
+from src.packets.key_request import KeyRequest
+from src.packets.key_response import KeyResponse
+from src.packets.login_request import LoginRequest
 from src.packets.packet import Packet
 from src.packets.read_request import ReadRequest
 from src.packets.read_response import ReadResponse
+from src.packets.registration_request import RegistrationRequest
 from src.port_number import PortNumber
 
 logger = logging.getLogger(__name__)
@@ -35,6 +43,7 @@ class Server(CommandLineApplication):
 
         self.running = True
         self.hostname = "localhost"
+        self.users: dict[str, RsaEncrypter] = {}
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
     def run(self) -> None:
@@ -65,22 +74,31 @@ class Server(CommandLineApplication):
             print(message)
             raise SystemExit from error
 
+    @staticmethod
+    def send_response(response: Packet, connection_socket: socket.socket) -> None:
+        """Send a response to the client's request.
+
+        :param response: The response object.
+        :param connection_socket: The socket to send the response over.
+        """
+        record = response.to_bytes()
+        connection_socket.send(record)
+
     def process_read_request(
         self,
-        connection_socket: socket.socket,
         packet: bytes,
+        connection_socket: socket.socket,
     ) -> None:
         """Respond to read requests.
 
-        :param sender_name: The name of the user who sent the read request.
+        :param packet: The read request packet to process.
         :param connection_socket: The connection socket to send the response on.
-        :return: The response to the read request.
         """
         (sender_name,) = ReadRequest.decode_packet(packet)
 
         response = ReadResponse(self.messages.get(sender_name, []))
-        record = response.to_bytes()
-        connection_socket.send(record)
+        self.send_response(response, connection_socket)
+
         del self.messages.get(sender_name, [])[: response.num_messages]
         logger.info(
             "%s message(s) delivered to %s",
@@ -120,10 +138,52 @@ class Server(CommandLineApplication):
             f'"{message.decode()}" to {receiver_name}',
         )
 
+    def process_login_request(self, packet: bytes) -> None:
+        """Process a client requset to login.
+
+        :param packet: A byte array containing the login request.
+        """
+        (sender_name,) = LoginRequest.decode_packet(packet)
+        print("logged in", sender_name)
+
+    def process_registration_request(self, packet: bytes) -> None:
+        """Process a client request to register a new name.
+
+        :param packet: A byte array containing the registration request.
+        """
+        sender_name, public_key = RegistrationRequest.decode_packet(packet)
+        if sender_name not in self.users:
+            self.users[sender_name] = public_key
+            print(
+                f"Registered {sender_name}",
+                f"with product {public_key.product}",
+                f"and exponent {public_key.exponent}",
+            )
+
+        else:
+            message = f"name {sender_name} already registered"
+            logger.error(message)
+
+    def process_key_request(
+        self,
+        packet: bytes,
+        connection_socket: socket.socket,
+    ) -> None:
+        """Process a client request for a user's public key.
+
+        :param packet: A byte array containing the key request.
+        :param connection_socket: The socket to send the response over.
+        """
+        (requested_user,) = KeyRequest.decode_packet(packet)
+        print(f"Received request for {requested_user}'s key")
+        public_key = self.users[requested_user]
+        response = KeyResponse(public_key)
+        self.send_response(response, connection_socket)
+
     def process_request(self, packet: bytes, connection_socket: socket.socket) -> None:
         """Process an incoming client request.
 
-        :param record: The packet received from a client.
+        :param packet: The packet received from a client.
         :param connection_socket: The socket to use for responding to read requests.
         """
         message_type: MessageType
@@ -131,10 +191,19 @@ class Server(CommandLineApplication):
 
         match message_type:
             case MessageType.READ:
-                self.process_read_request(connection_socket, packet)
+                self.process_read_request(packet, connection_socket)
 
             case MessageType.CREATE:
                 self.process_create_request(packet)
+
+            case MessageType.LOGIN:
+                self.process_login_request(packet)
+
+            case MessageType.REGISTER:
+                self.process_registration_request(packet)
+
+            case MessageType.KEY_REQUEST:
+                self.process_key_request(packet, connection_socket)
 
             case _:
                 logging.error("Message of incorrect type received!")

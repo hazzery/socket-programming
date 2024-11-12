@@ -4,12 +4,17 @@ import logging
 import socket
 from collections import OrderedDict
 
+from message_cipher.rsa_system import RSA
+
 from src.command_line_application import CommandLineApplication
 from src.message_type import MessageType
 from src.packets.create_request import CreateRequest
+from src.packets.key_request import KeyRequest
+from src.packets.key_response import KeyResponse
 from src.packets.packet import Packet
 from src.packets.read_request import ReadRequest
 from src.packets.read_response import ReadResponse
+from src.packets.registration_request import RegistrationRequest
 from src.port_number import PortNumber
 
 logger = logging.getLogger(__name__)
@@ -183,6 +188,35 @@ class Client(CommandLineApplication):
         )
         self.send_request(request)
 
+    def send_login_request(self) -> None:
+        """Send a login request to the server."""
+        print("logging in")
+
+    def send_registration_request(self) -> None:
+        """Send a login request to the server."""
+        public_key, private_key = RSA()
+
+        print(f"Creatged product {public_key.product}")
+        print(f"Created exponent {public_key.exponent}")
+
+        request = RegistrationRequest(self.user_name, public_key)
+        self.send_request(request)
+
+    def send_key_request(self, receiver_name: str | None) -> None:
+        """Send a pubblic key request to the server."""
+        if not receiver_name:
+            receiver_name = input("Who's key are we requesting?")
+
+        request = KeyRequest(receiver_name)
+        response = self.send_request(request)
+        message_type, payload = Packet.decode_packet(response)
+        if message_type != MessageType.KEY_RESPONSE:
+            raise ValueError("Wrong response type!")
+
+        (public_key,) = KeyResponse.decode_packet(payload)
+        print(f"Received product {public_key.product}")
+        print(f"Received exponent {public_key.exponent}")
+
     def run(
         self,
         *,
@@ -202,6 +236,15 @@ class Client(CommandLineApplication):
 
             case MessageType.CREATE:
                 self.send_create_request(receiver_name, message)
+
+            case MessageType.LOGIN:
+                self.send_login_request()
+
+            case MessageType.REGISTER:
+                self.send_registration_request()
+
+            case MessageType.KEY_REQUEST:
+                self.send_key_request(receiver_name)
 
             case _:
                 print("Oopsies, wrong message type!")
