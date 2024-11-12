@@ -105,12 +105,12 @@ class Client(CommandLineApplication):
                 connection_socket.send(packet)
                 response = connection_socket.recv(4096)
 
-        except ConnectionRefusedError as error:
-            logger.exception("Connection refused, likely due to invalid port number")
-            print("Connection refused, likely due to invalid port number")
-            raise SystemExit from error
-        except TimeoutError as error:
-            message = "Connection timed out, likely due to invalid host name"
+        except (ConnectionRefusedError, TimeoutError) as error:
+            message = (
+                "Connection refused, likely due to invalid port number"
+                if isinstance(error, ConnectionRefusedError)
+                else "Connection timed out, likely due to invalid host name"
+            )
             logger.exception(message)
             print(message)
             raise SystemExit from error
