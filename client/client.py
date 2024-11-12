@@ -6,8 +6,10 @@ from collections import OrderedDict
 
 from src.command_line_application import CommandLineApplication
 from src.message_type import MessageType
-from src.packets.message_request import MessageRequest
-from src.packets.message_response import MessageResponse
+from src.packets.create_request import CreateRequest
+from src.packets.packet import Packet
+from src.packets.read_request import ReadRequest
+from src.packets.read_response import ReadResponse
 from src.port_number import PortNumber
 
 logger = logging.getLogger(__name__)
@@ -92,21 +94,19 @@ class Client(CommandLineApplication):
 
         return user_name
 
-    def send_message_request(self, request: MessageRequest) -> bytes | None:
+    def send_request(self, request: Packet) -> bytes:
         """Send a message request record to the server.
 
         :param request: The message request to be sent.
         :return: The server's response if applicable, otherwise ``None``.
         """
         packet = request.to_bytes()
-        response = None
         try:
             with socket.socket() as connection_socket:
                 connection_socket.settimeout(1)
                 connection_socket.connect((self.host_name, self.port_number))
                 connection_socket.send(packet)
-                if self.message_type == MessageType.READ:
-                    response = connection_socket.recv(4096)
+                response = connection_socket.recv(4096)
 
         except ConnectionRefusedError as error:
             logger.exception("Connection refused, likely due to invalid port number")
@@ -133,7 +133,7 @@ class Client(CommandLineApplication):
 
         :param packet: The message response from the server.
         """
-        messages, more_messages = MessageResponse.decode_packet(packet)
+        messages, more_messages = ReadResponse.decode_packet(packet)
 
         for sender, message in messages:
             logger.info('Received %s\'s message "%s"', sender, message)
@@ -146,39 +146,68 @@ class Client(CommandLineApplication):
             logger.info("Server has more messages available for this user")
             print("More messages available, please send another request")
 
+    def send_read_request(self) -> None:
+        """Send a read request to the server."""
+        request = ReadRequest(self.user_name)
+        self.response = self.send_request(request)
+
+        self.read_message_response(self.response)
+
+    def send_create_request(
+        self,
+        receiver_name: str | None,
+        message: str | None,
+    ) -> None:
+        """Send a create request to the server.
+
+        :param receiver_name: The name of the person to send the messag to.
+        :param message: The message to be sent.
+        """
+        if receiver_name is None:
+            self.receiver_name = input("Enter the name of the receiver: ")
+        else:
+            self.receiver_name = receiver_name
+
+        if message is None:
+            self.message = input("Enter the message to be sent: ")
+        else:
+            self.message = message
+
+        logger.info(
+            'User specified message to %s: "%s"',
+            self.receiver_name,
+            self.message,
+        )
+
+        request = CreateRequest(
+            self.user_name,
+            self.receiver_name,
+            self.message,
+        )
+        self.send_request(request)
+
     def run(
         self,
         *,
         receiver_name: str | None = None,
         message: str | None = None,
     ) -> None:
-        """Ask the user to input message and send request to server."""
-        if self.message_type == MessageType.CREATE:
-            if receiver_name is None:
-                self.receiver_name = input("Enter the name of the receiver: ")
-            else:
-                self.receiver_name = receiver_name
+        """Ask the user to input message and send request to server.
 
-            if message is None:
-                self.message = input("Enter the message to be sent: ")
-            else:
-                self.message = message
+        :param receiver_name: The name of the user to send the message to.
+        Will request from ``stdin`` if not present. Defaults to ``None``.
+        :param message: The message to send. Will request from
+        ``stdin`` if not present. Defaults to ``None``.
+        """
+        match self.message_type:
+            case MessageType.READ:
+                self.send_read_request()
 
-            logger.info(
-                'User specified message to %s: "%s"',
-                self.receiver_name,
-                self.message,
-            )
+            case MessageType.CREATE:
+                self.send_create_request(receiver_name, message)
 
-        request = MessageRequest(
-            self.message_type,
-            self.user_name,
-            self.receiver_name,
-            self.message,
-        )
-        self.response = self.send_message_request(request)
-        if self.message_type == MessageType.READ and self.response:
-            self.read_message_response(self.response)
+            case _:
+                print("Oopsies, wrong message type!")
 
     @property
     def result(self) -> bytes:

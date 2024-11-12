@@ -4,6 +4,8 @@ import abc
 import struct
 from typing import Any
 
+from src.message_type import MessageType
+
 
 class Packet(metaclass=abc.ABCMeta):
     """Abstract class for all packets.
@@ -20,7 +22,9 @@ class Packet(metaclass=abc.ABCMeta):
 
     MAGIC_NUMBER = 0xAE73
 
-    struct_format: str
+    struct_format = "!HB"
+
+    message_type: MessageType
 
     @abc.abstractmethod
     def __init__(self, *args: tuple[Any, ...]) -> None:
@@ -34,19 +38,34 @@ class Packet(metaclass=abc.ABCMeta):
     def to_bytes(self) -> bytes:
         """Convert the packet into a ``bytes`` object.
 
-        :return: A ``bytes`` object encoding individual fields of the packet.
+        :return: A ``bytes`` object encoding the packet's message type.
         """
-        raise NotImplementedError
+        return struct.pack(
+            Packet.struct_format,
+            self.MAGIC_NUMBER,
+            self.message_type.value,
+        )
 
     @classmethod
     @abc.abstractmethod
     def decode_packet(cls, packet: bytes) -> tuple[Any, ...]:
-        """Decode the packet into a tuple of values.
+        """Decode the packet into its message type and payload.
 
         :param packet: The packet to decode.
-        :return: A tuple of the decoded values extracted from the packet.
+        :return: A tuple of the decoded message type and the payload.
         """
-        raise NotImplementedError
+        header_fields: tuple[int, MessageType]
+        header_fields, payload = Packet.split_packet(packet)
+        magic_number, message_type_number = header_fields
+
+        if magic_number != cls.MAGIC_NUMBER:
+            raise ValueError("Incorrect magic number found in packet")
+        try:
+            message_type = MessageType(message_type_number)
+        except ValueError as error:
+            raise ValueError("Invalid message type ID number") from error
+
+        return message_type, payload
 
     @classmethod
     def split_packet(cls, packet: bytes) -> tuple[tuple[Any, ...], bytes]:
@@ -67,20 +86,23 @@ class Packet(metaclass=abc.ABCMeta):
     @classmethod
     def __init_subclass__(
         cls,
-        struct_format: str | None = None,
-        **kwargs: tuple[Any, ...],
+        message_type: MessageType,
+        struct_format: str,
     ) -> None:
         """Ensure ``struct_format`` attribute is present.
 
         All subclasses of ``Packet`` must specify a ``struct_format``
-        in their class attributes. This is used for packing and
-        unpacking the data into a minimal package.
+        and a ``message_type`` in their class attributes. This is used
+        for packing and unpacking the data into a minimal package, and
+        to communicate what data is stored inside the packet.
 
+        :param message_type: The type of message the packet will encode.
         :param struct_format: The format of the packet data for the ``struct`` module.
         :param kwargs: No additional kwargs will be accepted.
         """
         if not struct_format:
             raise ValueError("Must specify struct format")
 
-        super().__init_subclass__(**kwargs)
+        super().__init_subclass__()
         cls.struct_format = struct_format
+        cls.message_type = message_type

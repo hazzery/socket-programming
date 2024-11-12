@@ -6,8 +6,10 @@ from collections import OrderedDict
 
 from src.command_line_application import CommandLineApplication
 from src.message_type import MessageType
-from src.packets.message_request import MessageRequest
-from src.packets.message_response import MessageResponse
+from src.packets.create_request import CreateRequest
+from src.packets.packet import Packet
+from src.packets.read_request import ReadRequest
+from src.packets.read_response import ReadResponse
 from src.port_number import PortNumber
 
 logger = logging.getLogger(__name__)
@@ -66,7 +68,7 @@ class Server(CommandLineApplication):
     def process_read_request(
         self,
         connection_socket: socket.socket,
-        sender_name: str,
+        packet: bytes,
     ) -> None:
         """Respond to read requests.
 
@@ -74,7 +76,9 @@ class Server(CommandLineApplication):
         :param connection_socket: The connection socket to send the response on.
         :return: The response to the read request.
         """
-        response = MessageResponse(self.messages.get(sender_name, []))
+        (sender_name,) = ReadRequest.decode_packet(packet)
+
+        response = ReadResponse(self.messages.get(sender_name, []))
         record = response.to_bytes()
         connection_socket.send(record)
         del self.messages.get(sender_name, [])[: response.num_messages]
@@ -87,16 +91,20 @@ class Server(CommandLineApplication):
 
     def process_create_request(
         self,
-        sender_name: str,
-        receiver_name: str,
-        message: bytes,
+        packet: bytes,
     ) -> None:
-        """Process `create` requests.
+        """Process create requests.
 
-        :param sender_name: The name of the user who sent the `create` request.
+        :param sender_name: The name of the user who sent the create request.
         :param receiver_name: The name of the user who will receive the message.
         :param message: The message to be sent.
         """
+        (
+            sender_name,
+            receiver_name,
+            message,
+        ) = CreateRequest.decode_packet(packet)
+
         if receiver_name not in self.messages:
             self.messages[receiver_name] = []
 
@@ -112,6 +120,25 @@ class Server(CommandLineApplication):
             f'"{message.decode()}" to {receiver_name}',
         )
 
+    def process_request(self, packet: bytes, connection_socket: socket.socket) -> None:
+        """Process an incoming client request.
+
+        :param record: The packet received from a client.
+        :param connection_socket: The socket to use for responding to read requests.
+        """
+        message_type: MessageType
+        message_type, packet = Packet.decode_packet(packet)
+
+        match message_type:
+            case MessageType.READ:
+                self.process_read_request(connection_socket, packet)
+
+            case MessageType.CREATE:
+                self.process_create_request(packet)
+
+            case _:
+                logging.error("Message of incorrect type received!")
+
     def run_server(self, welcoming_socket: socket.socket) -> None:
         """Run the server side of the program.
 
@@ -120,6 +147,8 @@ class Server(CommandLineApplication):
         try:
             connection_socket, client_address = welcoming_socket.accept()
         except TimeoutError:
+            # Prevent the server from indefinitely waiting for new
+            # client requests, so that the ``stop`` function works
             return
 
         connection_socket.settimeout(1)
@@ -130,14 +159,7 @@ class Server(CommandLineApplication):
         try:
             with connection_socket:
                 record = connection_socket.recv(4096)
-                request_fields = MessageRequest.decode_packet(record)
-                message_type, sender_name, receiver_name, message = request_fields
-
-                if message_type == MessageType.READ:
-                    self.process_read_request(connection_socket, sender_name)
-
-                elif message_type == MessageType.CREATE:
-                    self.process_create_request(sender_name, receiver_name, message)
+                self.process_request(record, connection_socket)
 
         except TimeoutError:
             error_message = "Timed out while waiting for message request"

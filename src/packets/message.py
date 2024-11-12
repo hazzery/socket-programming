@@ -2,10 +2,12 @@
 
 import struct
 
+from src.message_type import MessageType
+
 from .packet import Packet
 
 
-class Message(Packet, struct_format="!BH"):
+class Message(Packet, struct_format="!BH", message_type=MessageType.MESSAGE):
     """A class for encoding and decoding message packets.
 
     Message "packets" are the encoding of a single message from within
@@ -16,7 +18,7 @@ class Message(Packet, struct_format="!BH"):
         """Create the Message which can be encoded into a packet.
 
         :param sender_name: The name of the user sending this message.
-        :param message: The message to be sent.
+        :param message: The message to be sent as an array of bytes.
         """
         self.sender_name = sender_name
         self.message = message

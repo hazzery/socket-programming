@@ -10,6 +10,8 @@ class MessageType(Enum):
     CREATE = 2
     RESPONSE = 3
     LOGIN = 4
+    REGISTER = 5
+    MESSAGE = 6
 
     @staticmethod
     def from_str(string: str) -> "MessageType":
