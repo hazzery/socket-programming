@@ -33,7 +33,9 @@ class ReadResponse(Packet, struct_format="!B?", message_type=MessageType.RESPONS
         """
         logger.info("Creating message response for %s message(s)", self.num_messages)
 
-        self.packet = struct.pack(
+        self.packet = super().to_bytes()
+
+        self.packet += struct.pack(
             self.struct_format,
             self.num_messages,
             self.more_messages,

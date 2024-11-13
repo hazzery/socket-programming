@@ -23,7 +23,9 @@ class LoginRequest(Packet, struct_format="!HBB", message_type=MessageType.LOGIN)
         """Encode the login request packet into a byte array."""
         logging.info("Creating log-in request as %s", self.user_name)
 
-        self.packet = struct.pack(
+        self.packet = super().to_bytes()
+
+        self.packet += struct.pack(
             self.struct_format,
             len(self.user_name.encode()),
         )

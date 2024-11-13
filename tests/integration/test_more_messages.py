@@ -5,10 +5,12 @@ import sys
 import threading
 import unittest
 
+from src.packets.packet import Packet
+
 sys.path.insert(0, "../../")
 import client
 import server
-from src.packets.message_response import MessageResponse
+from src.packets.read_response import ReadResponse
 
 
 class TestMoreMessages(unittest.TestCase):
@@ -46,7 +48,9 @@ class TestMoreMessages(unittest.TestCase):
         server_object.stop()
         server_thread.join()
 
-        messages, more_messages = MessageResponse.decode_packet(final_client.result)
+        _, packet = Packet.decode_packet(final_client.result)
+
+        messages, more_messages = ReadResponse.decode_packet(packet)
         self.assertEqual(255, len(messages))
         self.assertTrue(more_messages)
 

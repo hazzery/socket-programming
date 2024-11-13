@@ -96,19 +96,21 @@ class Client(CommandLineApplication):
 
         return user_name
 
-    def send_request(self, request: Packet) -> bytes:
+    def send_request(self, request: Packet, *, expect_response: bool = True) -> bytes:
         """Send a message request record to the server.
 
         :param request: The message request to be sent.
         :return: The server's response if applicable, otherwise ``None``.
         """
+        response = b""
         packet = request.to_bytes()
         try:
             with socket.socket() as connection_socket:
                 connection_socket.settimeout(1)
                 connection_socket.connect((self.host_name, self.port_number))
                 connection_socket.send(packet)
-                response = connection_socket.recv(4096)
+                if expect_response:
+                    response = connection_socket.recv(4096)
 
         except (ConnectionRefusedError, TimeoutError) as error:
             message = (
@@ -135,6 +137,7 @@ class Client(CommandLineApplication):
 
         :param packet: The message response from the server.
         """
+        _, packet = Packet.decode_packet(packet)
         messages, more_messages = ReadResponse.decode_packet(packet)
 
         for sender, message in messages:

@@ -4,7 +4,9 @@ import socket
 import unittest
 
 from server import Server
-from src.packets.message_response import MessageResponse
+from src.packets.packet import Packet
+from src.packets.read_request import ReadRequest
+from src.packets.read_response import ReadResponse
 
 
 class TestServer(unittest.TestCase):
@@ -41,12 +43,16 @@ class TestServer(unittest.TestCase):
                 client_socket.connect((TestServer.hostname, TestServer.port_number))
                 server_connection_socket, _ = server_welcoming_socket.accept()
 
+                packet = ReadRequest(receiver_name).to_bytes()
+                _, packet = Packet.decode_packet(packet)
+
                 with server_connection_socket:
-                    server.process_read_request(server_connection_socket, receiver_name)
+                    server.process_read_request(packet, server_connection_socket)
 
                 # Receive message from server
-                packet = client_socket.recv(1024)
-                response = MessageResponse.decode_packet(packet)
+                response_packet = client_socket.recv(1024)
+                _, response_packet = Packet.decode_packet(response_packet)
+                response = ReadResponse.decode_packet(response_packet)
 
                 # Check that the message is correct
                 self.assertEqual(([(sender_name, message.decode())], False), response)

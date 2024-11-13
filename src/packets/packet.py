@@ -1,6 +1,7 @@
 """Home to the ``Packet`` abstract class."""
 
 import abc
+import re
 import struct
 from typing import Any
 
@@ -25,6 +26,8 @@ class Packet(metaclass=abc.ABCMeta):
     struct_format = "!HB"
 
     message_type: MessageType
+
+    struct_format_regex = re.compile("^[@=<>!]?[xcbB?hHiIlLqQnNefdspP]+$")
 
     @abc.abstractmethod
     def __init__(self, *args: tuple[Any, ...]) -> None:
@@ -86,6 +89,7 @@ class Packet(metaclass=abc.ABCMeta):
     @classmethod
     def __init_subclass__(
         cls,
+        *,
         message_type: MessageType,
         struct_format: str,
     ) -> None:
@@ -99,9 +103,11 @@ class Packet(metaclass=abc.ABCMeta):
         :param message_type: The type of message the packet will encode.
         :param struct_format: The format of the packet data for the ``struct`` module.
         :param kwargs: No additional kwargs will be accepted.
+
+        :raises ValueError: if the provided struct format is invalid.
         """
-        if not struct_format:
-            raise ValueError("Must specify struct format")
+        if not re.match(Packet.struct_format_regex, struct_format):
+            raise ValueError("Invalid struct format")
 
         super().__init_subclass__()
         cls.struct_format = struct_format

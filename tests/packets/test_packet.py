@@ -3,22 +3,27 @@
 import unittest
 from typing import Any
 
+from src.message_type import MessageType
 from src.packets.packet import Packet
 
 
-class TestClientParseArguments(unittest.TestCase):
-    """Test suite for Client class."""
+class TestPacket(unittest.TestCase):
+    """Test suite for Packet class."""
 
     def test_fail_subclass(self) -> None:
         """Test Packet __init_subclass__ function.
 
         Ensure that we cannot subclass from CommandLineApplication
-        without specifying a struct format.
+        without specifying a struct format and message type.
         """
         with self.assertRaises(ValueError):
 
-            class NoStructFormat(Packet):
-                """No ``struct_formatt`` passed so class will not be created."""
+            class NoStructFormat(
+                Packet,
+                struct_format="invalid format",
+                message_type=MessageType.LOGIN,
+            ):
+                """Invalid ``struct_format`` passed, so class will not be created."""
 
                 def __init__(self, *args: tuple[Any, ...]) -> None:
                     pass

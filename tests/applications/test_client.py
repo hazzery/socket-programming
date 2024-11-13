@@ -5,7 +5,8 @@ import unittest
 
 from client import Client
 from src.message_type import MessageType
-from src.packets.message_request import MessageRequest
+from src.packets.create_request import CreateRequest
+from src.packets.packet import Packet
 
 
 class TestClient(unittest.TestCase):
@@ -41,8 +42,9 @@ class TestClient(unittest.TestCase):
             welcoming_socket.listen(1)
 
             # Send message request from the client
-            client.send_message_request(
-                MessageRequest(MessageType.CREATE, user_name, receiver_name, message),
+            client.send_request(
+                CreateRequest(user_name, receiver_name, message),
+                expect_response=False,
             )
 
             # Accept connection from the client
@@ -53,9 +55,10 @@ class TestClient(unittest.TestCase):
             with connection_socket:
                 packet = connection_socket.recv(4096)
 
-        # Check that the packet is correct
-        request = MessageRequest.decode_packet(packet)
-        self.assertEqual(
-            (MessageType.CREATE, user_name, receiver_name, message.encode()),
-            request,
-        )
+        message_type, packet = Packet.decode_packet(packet)
+
+        self.assertEqual(MessageType.CREATE, message_type)
+
+        expected = (user_name, receiver_name, message.encode())
+        actual = CreateRequest.decode_packet(packet)
+        self.assertEqual(expected, actual)
