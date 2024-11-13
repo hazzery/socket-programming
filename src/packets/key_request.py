@@ -25,7 +25,7 @@ class KeyRequest(
 
     def to_bytes(self) -> bytes:
         """Encode the key request packet into a byte array."""
-        logging.info("Creating key request for %s", self.user_name)
+        logging.debug("Creating key request for %s", self.user_name)
 
         self.packet = super().to_bytes()
 

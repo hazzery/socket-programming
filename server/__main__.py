@@ -23,8 +23,7 @@ def main() -> None:
     except SystemExit:
         sys.exit(1)
     except KeyboardInterrupt:
-        logger.info("Server shut down due to keyboard interrupt")
-        print("\nServer shut down")
+        logger.info("Server shut down")
         sys.exit(0)
 
 

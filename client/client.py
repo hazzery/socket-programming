@@ -47,7 +47,7 @@ class Client(CommandLineApplication):
             parsed_arguments
         )
 
-        logger.info(
+        logger.debug(
             "Client for %s port %s created by %s to send %s request",
             self.host_name,
             self.port_number,
@@ -73,7 +73,7 @@ class Client(CommandLineApplication):
             message = (
                 'Invalid host name, must be an IP address, domain name, or "localhost"'
             )
-            logger.exception(message)
+            logger.debug(message, exc_info=True)
             raise ValueError(message) from error
 
         return host_name
@@ -119,15 +119,13 @@ class Client(CommandLineApplication):
                 else "Connection timed out, likely due to invalid host name"
             )
             logger.exception(message)
-            print(message)
             raise SystemExit from error
 
         logger.info(
             "%s record sent as %s",
-            self.message_type.name.lower(),
+            self.message_type.name.capitalize(),
             self.user_name,
         )
-        print(f"{self.message_type.name.lower()} record sent as {self.user_name}")
 
         return response
 
@@ -141,15 +139,12 @@ class Client(CommandLineApplication):
         messages, more_messages = ReadResponse.decode_packet(packet)
 
         for sender, message in messages:
-            logger.info('Received %s\'s message "%s"', sender, message)
-            print(f"Message from {sender}:\n{message}\n")
+            logger.info("\nMessage from %s:\n%s", sender, message)
 
         if len(messages) == 0:
-            logger.info("Response contained no messages")
-            print("No messages available")
+            logger.info("No messages available")
         elif more_messages:
-            logger.info("Server has more messages available for this user")
-            print("More messages available, please send another request")
+            logger.info("More messages available, please send another request")
 
     def send_read_request(self) -> None:
         """Send a read request to the server."""
@@ -178,7 +173,7 @@ class Client(CommandLineApplication):
         else:
             self.message = message
 
-        logger.info(
+        logger.debug(
             'User specified message to %s: "%s"',
             self.receiver_name,
             self.message,
@@ -193,14 +188,17 @@ class Client(CommandLineApplication):
 
     def send_login_request(self) -> None:
         """Send a login request to the server."""
-        print("logging in")
+        logger.info("Logging in user")
 
     def send_registration_request(self) -> None:
         """Send a login request to the server."""
-        public_key, private_key = RSA()
+        public_key, _private_key = RSA()
 
-        print(f"Creatged product {public_key.product}")
-        print(f"Created exponent {public_key.exponent}")
+        logger.info(
+            "Created key %s for user %s",
+            (public_key.product, public_key.exponent),
+            self.user_name,
+        )
 
         request = RegistrationRequest(self.user_name, public_key)
         self.send_request(request)
@@ -208,7 +206,7 @@ class Client(CommandLineApplication):
     def send_key_request(self, receiver_name: str | None) -> None:
         """Send a pubblic key request to the server."""
         if not receiver_name:
-            receiver_name = input("Who's key are we requesting?")
+            receiver_name = input("Who's key are we requesting? ")
 
         request = KeyRequest(receiver_name)
         response = self.send_request(request)
@@ -217,8 +215,12 @@ class Client(CommandLineApplication):
             raise ValueError("Wrong response type!")
 
         (public_key,) = KeyResponse.decode_packet(payload)
-        print(f"Received product {public_key.product}")
-        print(f"Received exponent {public_key.exponent}")
+
+        logger.info(
+            "Received %s's key:\n%s",
+            receiver_name,
+            (public_key.product, public_key.exponent),
+        )
 
     def run(
         self,
@@ -250,7 +252,7 @@ class Client(CommandLineApplication):
                 self.send_key_request(receiver_name)
 
             case _:
-                print("Oopsies, wrong message type!")
+                logger.error("Oopsies, wrong message type!")
 
     @property
     def result(self) -> bytes:

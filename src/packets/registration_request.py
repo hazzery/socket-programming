@@ -28,7 +28,7 @@ class RegistrationRequest(
 
     def to_bytes(self) -> bytes:
         """Encode the registration request packet into a byte array."""
-        logging.info("Creating request to register as %s", self.user_name)
+        logging.debug("Creating request to register as %s", self.user_name)
 
         user_name = self.user_name.encode()
 

@@ -63,7 +63,6 @@ class Server(CommandLineApplication):
                     self.hostname,
                     self.port_number,
                 )
-                print(f"starting up on {self.hostname} port {self.port_number}")
 
                 while self.running:
                     self.run_server(welcoming_socket)
@@ -71,7 +70,6 @@ class Server(CommandLineApplication):
         except OSError as error:
             message = "Error binding socket on provided port"
             logger.exception(message)
-            print(message)
             raise SystemExit from error
 
     @staticmethod
@@ -105,7 +103,6 @@ class Server(CommandLineApplication):
             response.num_messages,
             sender_name,
         )
-        print(f"{response.num_messages} message(s) delivered to {sender_name}")
 
     def process_create_request(
         self,
@@ -133,10 +130,6 @@ class Server(CommandLineApplication):
             receiver_name,
             message.decode(),
         )
-        print(
-            f"{sender_name} sends the message "
-            f'"{message.decode()}" to {receiver_name}',
-        )
 
     def process_login_request(self, packet: bytes) -> None:
         """Process a client requset to login.
@@ -144,7 +137,7 @@ class Server(CommandLineApplication):
         :param packet: A byte array containing the login request.
         """
         (sender_name,) = LoginRequest.decode_packet(packet)
-        print("logged in", sender_name)
+        logger.info("logged in %s", sender_name)
 
     def process_registration_request(self, packet: bytes) -> None:
         """Process a client request to register a new name.
@@ -154,10 +147,10 @@ class Server(CommandLineApplication):
         sender_name, public_key = RegistrationRequest.decode_packet(packet)
         if sender_name not in self.users:
             self.users[sender_name] = public_key
-            print(
-                f"Registered {sender_name}",
-                f"with product {public_key.product}",
-                f"and exponent {public_key.exponent}",
+            logger.info(
+                "Registered %s with key %s",
+                sender_name,
+                (public_key.product, public_key.exponent),
             )
 
         else:
@@ -175,7 +168,8 @@ class Server(CommandLineApplication):
         :param connection_socket: The socket to send the response over.
         """
         (requested_user,) = KeyRequest.decode_packet(packet)
-        print(f"Received request for {requested_user}'s key")
+        logger.info("Received request for %s's key", requested_user)
+
         public_key = self.users[requested_user]
         response = KeyResponse(public_key)
         self.send_response(response, connection_socket)
@@ -222,8 +216,7 @@ class Server(CommandLineApplication):
 
         connection_socket.settimeout(1)
 
-        logger.info("New client connection from %s", client_address)
-        print("New client connection from", client_address)
+        logger.info("\nNew client connection from %s", client_address)
 
         try:
             with connection_socket:
@@ -233,13 +226,11 @@ class Server(CommandLineApplication):
         except TimeoutError:
             error_message = "Timed out while waiting for message request"
             logger.exception(error_message)
-            print(error_message)
         except ValueError:
             error_message = "Message request discarded"
             logger.exception(error_message)
-            print(error_message)
 
     def stop(self) -> None:
         """Stop the server."""
-        print("Stopping server.")
+        logger.info("Stopping server.")
         self.running = False

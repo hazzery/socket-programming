@@ -37,7 +37,7 @@ class ReadRequest(Packet, struct_format="!B", message_type=MessageType.READ):
 
         :return: An array of bytes holding the message request.
         """
-        logger.info("Creating READ request from %s", self.user_name)
+        logger.debug("Creating READ request from %s", self.user_name)
 
         self.packet = super().to_bytes()
 

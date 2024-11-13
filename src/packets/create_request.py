@@ -42,7 +42,7 @@ class CreateRequest(Packet, struct_format="!BBH", message_type=MessageType.CREAT
 
         :return: A byte array holding the create request.
         """
-        logger.info(
+        logger.debug(
             'Creating CREATE request to send %s the message "%s" from %s',
             self.receiver_name,
             self.message,

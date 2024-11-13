@@ -31,7 +31,7 @@ class ReadResponse(Packet, struct_format="!B?", message_type=MessageType.RESPONS
 
         :return: A byte array holding the message response.
         """
-        logger.info("Creating message response for %s message(s)", self.num_messages)
+        logger.debug("Creating message response for %s message(s)", self.num_messages)
 
         self.packet = super().to_bytes()
 
@@ -64,7 +64,7 @@ class ReadResponse(Packet, struct_format="!B?", message_type=MessageType.RESPONS
             sender_name, message, remaining_messages = Message.decode_packet(
                 remaining_messages,
             )
-            logger.info('Decoded message from %s: "%s"', sender_name, message)
+            logger.debug('Decoded message from %s: "%s"', sender_name, message)
             messages.append((sender_name, message))
 
         return messages, more_messages

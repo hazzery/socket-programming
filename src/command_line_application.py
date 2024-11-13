@@ -40,8 +40,8 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
         """
         if len(arguments) != len(self.parameters):
             message = f"Invalid number of arguments, must be {len(self.parameters)}"
-            print(self.usage_prompt)
-            print(message)
+            logger.error(self.usage_prompt)
+            logger.error(message)
             raise SystemExit(message)
 
         try:
@@ -54,9 +54,8 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
                 )
             )
         except (ValueError, TypeError) as error:
-            logger.exception("Incorrect arguments")
-            print(self.usage_prompt)
-            print(error)
+            logger.log(logging.ERROR, "%s\n%s", self.usage_prompt, error)
+            logger.debug(error, exc_info=True)
             raise SystemExit from error
 
         return parsed_arguments
