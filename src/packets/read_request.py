@@ -32,7 +32,6 @@ class ReadRequest(Packet, struct_format="!B", message_type=MessageType.READ):
         """
         super().__init__(session_token=session_token)
         self.user_name = user_name
-        self.packet: bytes
 
     def to_bytes(self) -> bytes:
         """Return the read request packet.
@@ -41,16 +40,16 @@ class ReadRequest(Packet, struct_format="!B", message_type=MessageType.READ):
         """
         logger.debug("Creating READ request from %s", self.user_name)
 
-        self.packet = super().to_bytes()
+        packet = super().to_bytes()
 
-        self.packet += struct.pack(
+        packet += struct.pack(
             self.struct_format,
             len(self.user_name.encode()),
         )
 
-        self.packet += self.user_name.encode()
+        packet += self.user_name.encode()
 
-        return self.packet
+        return packet
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[str]:

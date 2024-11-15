@@ -22,22 +22,21 @@ class Message(Packet, struct_format="!BH", message_type=MessageType.MESSAGE):
         """
         self.sender_name = sender_name
         self.message = message
-        self.packet = b""
 
     def to_bytes(self) -> bytes:
         """Encode the message into bytes for transmission through a socket.
 
         :return: A ``bytes`` object encoding the message.
         """
-        self.packet += struct.pack(
+        packet = struct.pack(
             self.struct_format,
             len(self.sender_name.encode()),
             len(self.message),
         )
-        self.packet += self.sender_name.encode()
-        self.packet += self.message
+        packet += self.sender_name.encode()
+        packet += self.message
 
-        return self.packet
+        return packet
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[str, str, bytes]:

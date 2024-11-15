@@ -21,22 +21,21 @@ class LoginResponse(
         """Create a new login response packet."""
         super().__init__()
         self.token = encrypted_token_bytes
-        self.packet: bytes
 
     def to_bytes(self) -> bytes:
         """Encode a login response packet into a byte array."""
         logging.info("Creating login response")
 
-        self.packet = super().to_bytes()
+        packet = super().to_bytes()
 
-        self.packet += struct.pack(
+        packet += struct.pack(
             self.struct_format,
             len(self.token),
         )
 
-        self.packet += self.token
+        packet += self.token
 
-        return self.packet
+        return packet
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[bytes]:

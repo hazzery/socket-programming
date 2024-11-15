@@ -35,7 +35,6 @@ class CreateRequest(Packet, struct_format="!BH", message_type=MessageType.CREATE
         super().__init__(session_token=session_token)
         self.receiver_name = receiver_name
         self.message = message
-        self.packet = b""
 
     def to_bytes(self) -> bytes:
         """Return the create request packet.
@@ -48,18 +47,18 @@ class CreateRequest(Packet, struct_format="!BH", message_type=MessageType.CREATE
             self.message,
         )
 
-        self.packet = super().to_bytes()
+        packet = super().to_bytes()
 
-        self.packet += struct.pack(
+        packet += struct.pack(
             self.struct_format,
             len(self.receiver_name.encode()),
             len(self.message.encode()),
         )
 
-        self.packet += self.receiver_name.encode()
-        self.packet += self.message.encode()
+        packet += self.receiver_name.encode()
+        packet += self.message.encode()
 
-        return self.packet
+        return packet
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[str, bytes]:

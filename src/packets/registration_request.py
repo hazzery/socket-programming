@@ -25,7 +25,6 @@ class RegistrationRequest(
         super().__init__()
         self.user_name = user_name
         self.public_key = public_key
-        self.packet: bytes
 
     def to_bytes(self) -> bytes:
         """Encode the registration request packet into a byte array."""
@@ -41,20 +40,20 @@ class RegistrationRequest(
             (self.public_key.e.bit_length() + 7) // 8,
         )
 
-        self.packet = super().to_bytes()
+        packet = super().to_bytes()
 
-        self.packet += struct.pack(
+        packet += struct.pack(
             self.struct_format,
             len(user_name),
             len(product),
             len(exponent),
         )
 
-        self.packet += user_name
-        self.packet += product
-        self.packet += exponent
+        packet += user_name
+        packet += product
+        packet += exponent
 
-        return self.packet
+        return packet
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[str, rsa.PublicKey]:

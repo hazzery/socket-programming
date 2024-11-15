@@ -24,7 +24,6 @@ class ReadResponse(Packet, struct_format="!B?", message_type=MessageType.READ_RE
         self.more_messages = len(messages) > ReadResponse.MAX_MESSAGE_LENGTH
 
         self.messages = messages[: self.num_messages]
-        self.packet = b""
 
     def to_bytes(self) -> bytes:
         """Return the message response packet.
@@ -33,19 +32,19 @@ class ReadResponse(Packet, struct_format="!B?", message_type=MessageType.READ_RE
         """
         logger.debug("Creating message response for %s message(s)", self.num_messages)
 
-        self.packet = super().to_bytes()
+        packet = super().to_bytes()
 
-        self.packet += struct.pack(
+        packet += struct.pack(
             self.struct_format,
             self.num_messages,
             self.more_messages,
         )
 
         for sender, message in self.messages:
-            self.packet += Message(sender, message).to_bytes()
+            packet += Message(sender, message).to_bytes()
             logger.info('Encoded message from %s: "%s"', sender, message.decode())
 
-        return self.packet
+        return packet
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[list[tuple[str, str]], bool]:

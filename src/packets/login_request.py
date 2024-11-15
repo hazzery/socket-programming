@@ -18,22 +18,21 @@ class LoginRequest(Packet, struct_format="!B", message_type=MessageType.LOGIN):
         """Create a login request packet."""
         super().__init__()
         self.user_name = user_name
-        self.packet: bytes
 
     def to_bytes(self) -> bytes:
         """Encode the login request packet into a byte array."""
         logging.debug("Creating log-in request as %s", self.user_name)
 
-        self.packet = super().to_bytes()
+        packet = super().to_bytes()
 
-        self.packet += struct.pack(
+        packet += struct.pack(
             self.struct_format,
             len(self.user_name.encode()),
         )
 
-        self.packet += self.user_name.encode()
+        packet += self.user_name.encode()
 
-        return self.packet
+        return packet
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[Any, ...]:

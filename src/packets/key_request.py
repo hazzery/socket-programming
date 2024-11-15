@@ -22,22 +22,21 @@ class KeyRequest(
         """Create a key request packet."""
         super().__init__()
         self.user_name = user_name
-        self.packet: bytes
 
     def to_bytes(self) -> bytes:
         """Encode the key request packet into a byte array."""
         logging.debug("Creating key request for %s", self.user_name)
 
-        self.packet = super().to_bytes()
+        packet = super().to_bytes()
 
-        self.packet += struct.pack(
+        packet += struct.pack(
             self.struct_format,
             len(self.user_name.encode()),
         )
 
-        self.packet += self.user_name.encode()
+        packet += self.user_name.encode()
 
-        return self.packet
+        return packet
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[str]:
