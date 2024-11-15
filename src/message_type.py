@@ -1,19 +1,22 @@
 """Home to the ``MessageType``."""
 
-from enum import Enum
+import enum
 
 
-class MessageType(Enum):
+class MessageType(enum.Enum):
     """An enum for message types."""
 
-    READ = 1
-    CREATE = 2
-    RESPONSE = 3
-    LOGIN = 4
-    REGISTER = 5
-    MESSAGE = 6
-    KEY_REQUEST = 7
-    KEY_RESPONSE = 8
+    REGISTER = enum.auto()
+    LOGIN = enum.auto()
+    LOGIN_RESPONSE = enum.auto()
+
+    KEY = enum.auto()
+    KEY_RESPONSE = enum.auto()
+    CREATE = enum.auto()
+
+    READ = enum.auto()
+    READ_RESPONSE = enum.auto()
+    MESSAGE = enum.auto()
 
     @staticmethod
     def from_str(string: str) -> "MessageType":

@@ -10,7 +10,7 @@ from src.packets.packet import Packet
 logger = logging.getLogger(__name__)
 
 
-class ReadResponse(Packet, struct_format="!B?", message_type=MessageType.RESPONSE):
+class ReadResponse(Packet, struct_format="!B?", message_type=MessageType.READ_RESPONSE):
     """Enables encoding and decoding message response packets."""
 
     MAX_MESSAGE_LENGTH = 255

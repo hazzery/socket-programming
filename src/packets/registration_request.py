@@ -22,6 +22,7 @@ class RegistrationRequest(
 
     def __init__(self, user_name: str, public_key: rsa.PublicKey) -> None:
         """Create a login request packet."""
+        super().__init__()
         self.user_name = user_name
         self.public_key = public_key
         self.packet: bytes

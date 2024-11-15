@@ -15,7 +15,6 @@ from src.packets.key_response import KeyResponse
 from src.packets.login_request import LoginRequest
 from src.packets.login_response import LoginResponse
 from src.packets.packet import Packet
-from src.packets.read_request import ReadRequest
 from src.packets.read_response import ReadResponse
 from src.packets.registration_request import RegistrationRequest
 from src.port_number import PortNumber
@@ -36,15 +35,13 @@ class Server(CommandLineApplication):
         """
         super().__init__(OrderedDict(port_number=PortNumber))
 
-        # pylint thinks that self.parse_arguments is only
-        # capable of returning an empty list
-        # pylint: disable=unbalanced-tuple-unpacking
+        self.port_number: PortNumber
         (self.port_number,) = self.parse_arguments(arguments)
 
         self.running = True
         self.hostname = "localhost"
         self.users: dict[str, rsa.PublicKey] = {}
-        self.sessions: dict[str, bytes] = {}
+        self.sessions: dict[bytes, str] = {}
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
     def run(self) -> None:
@@ -90,7 +87,8 @@ class Server(CommandLineApplication):
 
     def process_read_request(
         self,
-        packet: bytes,
+        session_token: bytes | None,
+        _packet: bytes,
         connection_socket: socket.socket,
     ) -> None:
         """Respond to read requests.
@@ -98,7 +96,10 @@ class Server(CommandLineApplication):
         :param packet: The read request packet to process.
         :param connection_socket: The connection socket to send the response on.
         """
-        (sender_name,) = ReadRequest.decode_packet(packet)
+        if session_token not in self.sessions:
+            return
+
+        sender_name = self.sessions[session_token]
 
         response = ReadResponse(self.messages.get(sender_name, []))
         self.send_response(response, connection_socket)
@@ -112,19 +113,21 @@ class Server(CommandLineApplication):
 
     def process_create_request(
         self,
+        session_token: bytes | None,
         packet: bytes,
     ) -> None:
         """Process create requests.
 
-        :param sender_name: The name of the user who sent the create request.
-        :param receiver_name: The name of the user who will receive the message.
-        :param message: The message to be sent.
+        :param session_token: The token provided by the client.
+        :param packet: The packet provided by the client.
         """
-        (
-            sender_name,
-            receiver_name,
-            message,
-        ) = CreateRequest.decode_packet(packet)
+        if session_token not in self.sessions:
+            logger.info("Received unauthenticated create request, ignoreing")
+            return
+
+        sender_name = self.sessions[session_token]
+
+        receiver_name, message = CreateRequest.decode_packet(packet)
 
         if receiver_name not in self.messages:
             self.messages[receiver_name] = []
@@ -155,7 +158,7 @@ class Server(CommandLineApplication):
             return
 
         session_token = self.generate_session_token()
-        self.sessions[sender_name] = session_token
+        self.sessions[session_token] = sender_name
         logger.debug("Gave %s the token %s", sender_name, session_token)
 
         senders_public_key = self.users[sender_name]
@@ -206,14 +209,16 @@ class Server(CommandLineApplication):
         :param connection_socket: The socket to use for responding to read requests.
         """
         message_type: MessageType
-        message_type, packet = Packet.decode_packet(packet)
+        session_token: bytes | None
+
+        message_type, session_token, packet = Packet.decode_packet(packet)
 
         match message_type:
             case MessageType.READ:
-                self.process_read_request(packet, connection_socket)
+                self.process_read_request(session_token, packet, connection_socket)
 
             case MessageType.CREATE:
-                self.process_create_request(packet)
+                self.process_create_request(session_token, packet)
 
             case MessageType.LOGIN:
                 self.process_login_request(packet, connection_socket)
@@ -221,7 +226,7 @@ class Server(CommandLineApplication):
             case MessageType.REGISTER:
                 self.process_registration_request(packet)
 
-            case MessageType.KEY_REQUEST:
+            case MessageType.KEY:
                 self.process_key_request(packet, connection_socket)
 
             case _:

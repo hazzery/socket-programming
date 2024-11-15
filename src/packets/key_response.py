@@ -22,6 +22,7 @@ class KeyResponse(
 
     def __init__(self, public_key: rsa.PublicKey) -> None:
         """Create a key response packet."""
+        super().__init__()
         self.public_key = public_key
         self.packet: bytes
 

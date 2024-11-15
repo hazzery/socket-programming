@@ -14,12 +14,13 @@ from src.packets.packet import Packet
 class KeyRequest(
     Packet,
     struct_format="!H",
-    message_type=MessageType.KEY_REQUEST,
+    message_type=MessageType.KEY,
 ):
     """Encode and decode public key request packets."""
 
     def __init__(self, user_name: str) -> None:
         """Create a key request packet."""
+        super().__init__()
         self.user_name = user_name
         self.packet: bytes
 

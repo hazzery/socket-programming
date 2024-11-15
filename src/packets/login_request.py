@@ -16,6 +16,7 @@ class LoginRequest(Packet, struct_format="!B", message_type=MessageType.LOGIN):
 
     def __init__(self, user_name: str) -> None:
         """Create a login request packet."""
+        super().__init__()
         self.user_name = user_name
         self.packet: bytes
 

@@ -23,12 +23,14 @@ class ReadRequest(Packet, struct_format="!B", message_type=MessageType.READ):
 
     def __init__(
         self,
+        session_token: bytes,
         user_name: str,
     ) -> None:
         """Encode a read request packet.
 
         :param user_name: The name of the user sending the read request.
         """
+        super().__init__(session_token=session_token)
         self.user_name = user_name
         self.packet: bytes
 

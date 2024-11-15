@@ -11,31 +11,45 @@ from src.message_type import MessageType
 class Packet(metaclass=abc.ABCMeta):
     """Abstract class for all packets.
 
-    All classes inheriting ``Packet`` must specify ``struct_format``
-    in their class attributes. The format of ``struct_format`` is as
-    described in https://docs.python.org/3/library/struct.html
+    All classes inheriting ``Packet`` must specify both
+    ``struct_format`` and ``message_type`` in their class attributes.
+    The format of ``struct_format`` is as described in
+    https://docs.python.org/3/library/struct.html. ``message_type`` must
+    be of type ``message_type.MessageType``.
 
     Example::
 
-        class MyPacket(Packet, struct_format="!HBBH"):
+        class MyPacket(Packet, struct_format="!HBBH", message_type=MessageType.LOGIN):
             pass
     """
 
     MAGIC_NUMBER = 0xAE73
 
-    struct_format = "!HB"
+    STRUCT_FORMAT_REGEX = re.compile("^[@=<>!]?[xcbB?hHiIlLqQnNefdspP]+$")
+
+    SESSION_TOKEN_LENGTH = 32
+
+    struct_format = "!HB?"
 
     message_type: MessageType
 
-    struct_format_regex = re.compile("^[@=<>!]?[xcbB?hHiIlLqQnNefdspP]+$")
-
     @abc.abstractmethod
-    def __init__(self, *args: tuple[Any, ...]) -> None:
+    def __init__(
+        self,
+        *args: tuple[Any, ...],
+        session_token: bytes | None = None,
+    ) -> None:
         """Initialise the packet.
 
         :param args: All arguments needed to initialise the packet.
         """
-        raise NotImplementedError
+        if (
+            session_token is not None
+            and len(session_token) != Packet.SESSION_TOKEN_LENGTH
+        ):
+            raise ValueError("Session token is incorrect length")
+
+        self.session_token = session_token
 
     @abc.abstractmethod
     def to_bytes(self) -> bytes:
@@ -43,11 +57,17 @@ class Packet(metaclass=abc.ABCMeta):
 
         :return: A ``bytes`` object encoding the packet's message type.
         """
-        return struct.pack(
+        packet = struct.pack(
             Packet.struct_format,
             self.MAGIC_NUMBER,
             self.message_type.value,
+            self.session_token is not None,
         )
+
+        if self.session_token is not None:
+            packet += self.session_token
+
+        return packet
 
     @classmethod
     @abc.abstractmethod
@@ -57,9 +77,9 @@ class Packet(metaclass=abc.ABCMeta):
         :param packet: The packet to decode.
         :return: A tuple of the decoded message type and the payload.
         """
-        header_fields: tuple[int, MessageType]
+        header_fields: tuple[int, MessageType, bool]
         header_fields, payload = Packet.split_packet(packet)
-        magic_number, message_type_number = header_fields
+        magic_number, message_type_number, has_token = header_fields
 
         if magic_number != cls.MAGIC_NUMBER:
             raise ValueError("Incorrect magic number found in packet")
@@ -68,7 +88,15 @@ class Packet(metaclass=abc.ABCMeta):
         except ValueError as error:
             raise ValueError("Invalid message type ID number") from error
 
-        return message_type, payload
+        session_token = None
+
+        if has_token:
+            session_token, payload = (
+                payload[: Packet.SESSION_TOKEN_LENGTH],
+                payload[Packet.SESSION_TOKEN_LENGTH :],
+            )
+
+        return message_type, session_token, payload
 
     @classmethod
     def split_packet(cls, packet: bytes) -> tuple[tuple[Any, ...], bytes]:
@@ -106,7 +134,7 @@ class Packet(metaclass=abc.ABCMeta):
 
         :raises ValueError: if the provided struct format is invalid.
         """
-        if not re.match(Packet.struct_format_regex, struct_format):
+        if not re.match(Packet.STRUCT_FORMAT_REGEX, struct_format):
             raise ValueError("Invalid struct format")
 
         super().__init_subclass__()

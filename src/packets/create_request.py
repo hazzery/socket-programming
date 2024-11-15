@@ -10,7 +10,7 @@ from .packet import Packet
 logger = logging.getLogger(__name__)
 
 
-class CreateRequest(Packet, struct_format="!BBH", message_type=MessageType.CREATE):
+class CreateRequest(Packet, struct_format="!BH", message_type=MessageType.CREATE):
     """Encoding and decoding of create request packets.
 
     Usage:
@@ -22,7 +22,7 @@ class CreateRequest(Packet, struct_format="!BBH", message_type=MessageType.CREAT
 
     def __init__(
         self,
-        user_name: str,
+        session_token: bytes,
         receiver_name: str,
         message: str,
     ) -> None:
@@ -32,7 +32,7 @@ class CreateRequest(Packet, struct_format="!BBH", message_type=MessageType.CREAT
         :param receiver_name: The name of the message recipient.
         :param message: The string message to be sent.
         """
-        self.user_name = user_name
+        super().__init__(session_token=session_token)
         self.receiver_name = receiver_name
         self.message = message
         self.packet = b""
@@ -43,44 +43,35 @@ class CreateRequest(Packet, struct_format="!BBH", message_type=MessageType.CREAT
         :return: A byte array holding the create request.
         """
         logger.debug(
-            'Creating CREATE request to send %s the message "%s" from %s',
+            'Creating create request to send %s the message "%s"',
             self.receiver_name,
             self.message,
-            self.user_name,
         )
 
         self.packet = super().to_bytes()
 
         self.packet += struct.pack(
             self.struct_format,
-            len(self.user_name.encode()),
             len(self.receiver_name.encode()),
             len(self.message.encode()),
         )
 
-        self.packet += self.user_name.encode()
         self.packet += self.receiver_name.encode()
         self.packet += self.message.encode()
 
         return self.packet
 
     @classmethod
-    def decode_packet(cls, packet: bytes) -> tuple[str, str, bytes]:
+    def decode_packet(cls, packet: bytes) -> tuple[str, bytes]:
         """Decode a message request packet.
 
-        :param packet: An array of bytes containing the message request
+        :param packet: An array of bytes containing the create request
         """
         header_fields, payload = cls.split_packet(packet)
         (
-            user_name_size,
             receiver_name_size,
             message_size,
         ) = header_fields
-
-        if user_name_size < 1:
-            raise ValueError(
-                "Received message request with insufficient user name length",
-            )
 
         if receiver_name_size < 1:
             raise ValueError(
@@ -91,12 +82,9 @@ class CreateRequest(Packet, struct_format="!BBH", message_type=MessageType.CREAT
                 "Received create request with insufficient message length",
             )
 
-        user_name = payload[:user_name_size].decode()
-        index = user_name_size
-
-        receiver_name = payload[index : index + receiver_name_size].decode()
-        index += receiver_name_size
+        receiver_name = payload[:receiver_name_size].decode()
+        index = receiver_name_size
 
         message = payload[index : index + message_size]
 
-        return user_name, receiver_name, message
+        return receiver_name, message

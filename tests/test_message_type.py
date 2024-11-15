@@ -26,11 +26,17 @@ class TestMessageType(unittest.TestCase):
 
     def test_response_lowercase(self) -> None:
         """Test that response is parsed correctly."""
-        self.assertEqual(MessageType.RESPONSE, MessageType.from_str("response"))
+        self.assertEqual(
+            MessageType.READ_RESPONSE,
+            MessageType.from_str("read_response"),
+        )
 
     def test_response_uppercase(self) -> None:
         """Test that RESPONSE is parsed correctly."""
-        self.assertEqual(MessageType.RESPONSE, MessageType.from_str("RESPONSE"))
+        self.assertEqual(
+            MessageType.READ_RESPONSE,
+            MessageType.from_str("READ_RESPONSE"),
+        )
 
     def test_invalid(self) -> None:
         """Test that invalid input raises a ValueError."""
