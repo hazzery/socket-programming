@@ -17,6 +17,8 @@ from src.packets.packet import Packet
 from src.packets.read_request import ReadRequest
 from src.packets.read_response import ReadResponse
 from src.packets.registration_request import RegistrationRequest
+from src.parse_hostname import parse_hostname
+from src.parse_username import parse_username
 from src.port_number import PortNumber
 
 logger = logging.getLogger(__name__)
@@ -24,8 +26,6 @@ logger = logging.getLogger(__name__)
 
 class Client(CommandLineApplication):
     """Send and receives messages to and from the server."""
-
-    MAX_USERNAME_LENGTH = 255
 
     def __init__(self, arguments: list[str]) -> None:
         """Initialise the client with specified arguments.
@@ -35,9 +35,9 @@ class Client(CommandLineApplication):
         """
         super().__init__(
             OrderedDict(
-                host_name=self.parse_hostname,
+                host_name=parse_hostname,
                 port_number=PortNumber,
-                user_name=self.parse_username,
+                user_name=parse_username,
                 message_type=MessageType.from_str,
             ),
         )
@@ -69,43 +69,6 @@ class Client(CommandLineApplication):
         self.message = ""
         self.response: bytes | None = None
         self.session_token: bytes | None = None
-
-    @staticmethod
-    def parse_hostname(host_name: str) -> str:
-        """Parse the host name, ensuring it is valid.
-
-        :param host_name: String representing the host name.
-        :return: String of the host name.
-        :raises ValueError: If the host name is invalid.
-        """
-        try:
-            socket.getaddrinfo(host_name, 1024)
-        except socket.gaierror as error:
-            message = (
-                'Invalid host name, must be an IP address, domain name, or "localhost"'
-            )
-            logger.debug(message, exc_info=True)
-            raise ValueError(message) from error
-
-        return host_name
-
-    @staticmethod
-    def parse_username(user_name: str) -> str:
-        """Parse the username, ensuring it is valid.
-
-        :param user_name: String representing the username.
-        :return: String of the username.
-        :raises ValueError: If the username is invalid.
-        """
-        if len(user_name) == 0:
-            logger.error("Username is empty")
-            raise ValueError("Username must not be empty")
-
-        if len(user_name.encode()) > Client.MAX_USERNAME_LENGTH:
-            logger.error("Username consumes more than 255 bytes")
-            raise ValueError("Username must consume at most 255 bytes")
-
-        return user_name
 
     def send_request(self, request: Packet, *, expect_response: bool = True) -> bytes:
         """Send a message request record to the server.
