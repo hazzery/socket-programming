@@ -20,6 +20,7 @@ class ReadResponse(Packet, struct_format="!B?", message_type=MessageType.READ_RE
 
         :param messages: A list of all the messages to be put in the structure.
         """
+        super().__init__()
         self.num_messages = min(len(messages), ReadResponse.MAX_MESSAGE_LENGTH)
         self.more_messages = len(messages) > ReadResponse.MAX_MESSAGE_LENGTH
 
