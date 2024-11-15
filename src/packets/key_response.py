@@ -7,7 +7,7 @@ public key response packets.
 import logging
 import struct
 
-from message_cipher.rsa_encrypter import RsaEncrypter
+import rsa
 
 from src.message_type import MessageType
 from src.packets.packet import Packet
@@ -20,7 +20,7 @@ class KeyResponse(
 ):
     """Encode and decode public key response packets."""
 
-    def __init__(self, public_key: RsaEncrypter) -> None:
+    def __init__(self, public_key: rsa.PublicKey) -> None:
         """Create a key response packet."""
         self.public_key = public_key
         self.packet: bytes
@@ -29,12 +29,12 @@ class KeyResponse(
         """Encode the key response packet into a byte array."""
         logging.info("Creating key response")
 
-        product = self.public_key.product.to_bytes(
-            (self.public_key.product.bit_length() + 7) // 8,
+        product = self.public_key.n.to_bytes(
+            (self.public_key.n.bit_length() + 7) // 8,
         )
 
-        exponent = self.public_key.exponent.to_bytes(
-            (self.public_key.exponent.bit_length() + 7) // 8,
+        exponent = self.public_key.e.to_bytes(
+            (self.public_key.e.bit_length() + 7) // 8,
         )
 
         self.packet = super().to_bytes()
@@ -51,7 +51,7 @@ class KeyResponse(
         return self.packet
 
     @classmethod
-    def decode_packet(cls, packet: bytes) -> tuple[RsaEncrypter]:
+    def decode_packet(cls, packet: bytes) -> tuple[rsa.PublicKey]:
         """Decode the key response packet into its individual components.
 
         :param packet: The packet to be decoded.
@@ -65,6 +65,6 @@ class KeyResponse(
 
         exponent = int.from_bytes(payload[index : index + exponent_length])
 
-        public_key = RsaEncrypter(product, exponent)
+        public_key = rsa.PublicKey(product, exponent)
 
         return (public_key,)

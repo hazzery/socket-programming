@@ -7,7 +7,7 @@ registration request packets.
 import logging
 import struct
 
-from message_cipher.rsa_encrypter import RsaEncrypter
+import rsa
 
 from src.message_type import MessageType
 from src.packets.packet import Packet
@@ -20,7 +20,7 @@ class RegistrationRequest(
 ):
     """Encode and decode registration request packets."""
 
-    def __init__(self, user_name: str, public_key: RsaEncrypter) -> None:
+    def __init__(self, user_name: str, public_key: rsa.PublicKey) -> None:
         """Create a login request packet."""
         self.user_name = user_name
         self.public_key = public_key
@@ -32,12 +32,12 @@ class RegistrationRequest(
 
         user_name = self.user_name.encode()
 
-        product = self.public_key.product.to_bytes(
-            (self.public_key.product.bit_length() + 7) // 8,
+        product = self.public_key.n.to_bytes(
+            (self.public_key.n.bit_length() + 7) // 8,
         )
 
-        exponent = self.public_key.exponent.to_bytes(
-            (self.public_key.exponent.bit_length() + 7) // 8,
+        exponent = self.public_key.e.to_bytes(
+            (self.public_key.e.bit_length() + 7) // 8,
         )
 
         self.packet = super().to_bytes()
@@ -56,7 +56,7 @@ class RegistrationRequest(
         return self.packet
 
     @classmethod
-    def decode_packet(cls, packet: bytes) -> tuple[str, RsaEncrypter]:
+    def decode_packet(cls, packet: bytes) -> tuple[str, rsa.PublicKey]:
         """Decode the registration request packet into its individual components.
 
         :param packet: The packet to be decoded
@@ -73,4 +73,4 @@ class RegistrationRequest(
 
         exponent = int.from_bytes(payload[index : index + exponent_length])
 
-        return user_name, RsaEncrypter(product, exponent)
+        return user_name, rsa.PublicKey(product, exponent)

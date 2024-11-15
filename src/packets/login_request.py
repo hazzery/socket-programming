@@ -11,17 +11,17 @@ from src.message_type import MessageType
 from src.packets.packet import Packet
 
 
-class LoginRequest(Packet, struct_format="!HBB", message_type=MessageType.LOGIN):
+class LoginRequest(Packet, struct_format="!B", message_type=MessageType.LOGIN):
     """The LoginRequest class is used to encode and decode login request packets."""
 
     def __init__(self, user_name: str) -> None:
         """Create a login request packet."""
         self.user_name = user_name
-        self.packet = b""
+        self.packet: bytes
 
     def to_bytes(self) -> bytes:
         """Encode the login request packet into a byte array."""
-        logging.info("Creating log-in request as %s", self.user_name)
+        logging.debug("Creating log-in request as %s", self.user_name)
 
         self.packet = super().to_bytes()
 

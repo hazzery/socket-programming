@@ -1,12 +1,11 @@
 """Home to the ``Server`` class."""
 
 import logging
+import secrets
 import socket
 from collections import OrderedDict
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from message_cipher.rsa_encrypter import RsaEncrypter
+import rsa
 
 from src.command_line_application import CommandLineApplication
 from src.message_type import MessageType
@@ -14,6 +13,7 @@ from src.packets.create_request import CreateRequest
 from src.packets.key_request import KeyRequest
 from src.packets.key_response import KeyResponse
 from src.packets.login_request import LoginRequest
+from src.packets.login_response import LoginResponse
 from src.packets.packet import Packet
 from src.packets.read_request import ReadRequest
 from src.packets.read_response import ReadResponse
@@ -43,7 +43,8 @@ class Server(CommandLineApplication):
 
         self.running = True
         self.hostname = "localhost"
-        self.users: dict[str, RsaEncrypter] = {}
+        self.users: dict[str, rsa.PublicKey] = {}
+        self.sessions: dict[str, bytes] = {}
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
     def run(self) -> None:
@@ -81,6 +82,11 @@ class Server(CommandLineApplication):
         """
         record = response.to_bytes()
         connection_socket.send(record)
+
+    @staticmethod
+    def generate_session_token() -> bytes:
+        """Generate a random session token."""
+        return secrets.token_bytes()
 
     def process_read_request(
         self,
@@ -131,13 +137,32 @@ class Server(CommandLineApplication):
             message.decode(),
         )
 
-    def process_login_request(self, packet: bytes) -> None:
+    def process_login_request(
+        self,
+        packet: bytes,
+        connection_socket: socket.socket,
+    ) -> None:
         """Process a client requset to login.
 
         :param packet: A byte array containing the login request.
         """
         (sender_name,) = LoginRequest.decode_packet(packet)
-        logger.info("logged in %s", sender_name)
+
+        if sender_name not in self.users:
+            response = LoginResponse(b"")
+            self.send_response(response, connection_socket)
+            logger.info("Unregistered user %s attempted to login", sender_name)
+            return
+
+        session_token = self.generate_session_token()
+        self.sessions[sender_name] = session_token
+        logger.debug("Gave %s the token %s", sender_name, session_token)
+
+        senders_public_key = self.users[sender_name]
+        encrypted_session_token = rsa.encrypt(session_token, senders_public_key)
+        logger.debug("Encrypted token to %s", encrypted_session_token)
+        response = LoginResponse(encrypted_session_token)
+        self.send_response(response, connection_socket)
 
     def process_registration_request(self, packet: bytes) -> None:
         """Process a client request to register a new name.
@@ -150,7 +175,7 @@ class Server(CommandLineApplication):
             logger.info(
                 "Registered %s with key %s",
                 sender_name,
-                (public_key.product, public_key.exponent),
+                (public_key.n, public_key.e),
             )
 
         else:
@@ -191,7 +216,7 @@ class Server(CommandLineApplication):
                 self.process_create_request(packet)
 
             case MessageType.LOGIN:
-                self.process_login_request(packet)
+                self.process_login_request(packet, connection_socket)
 
             case MessageType.REGISTER:
                 self.process_registration_request(packet)

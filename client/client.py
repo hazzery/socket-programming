@@ -4,13 +4,15 @@ import logging
 import socket
 from collections import OrderedDict
 
-from message_cipher.rsa_system import RSA
+import rsa
 
 from src.command_line_application import CommandLineApplication
 from src.message_type import MessageType
 from src.packets.create_request import CreateRequest
 from src.packets.key_request import KeyRequest
 from src.packets.key_response import KeyResponse
+from src.packets.login_request import LoginRequest
+from src.packets.login_response import LoginResponse
 from src.packets.packet import Packet
 from src.packets.read_request import ReadRequest
 from src.packets.read_response import ReadResponse
@@ -55,9 +57,18 @@ class Client(CommandLineApplication):
             self.message_type.name.lower(),
         )
 
+        self.public_key, self.__private_key = rsa.newkeys(512)
+
+        logger.debug(
+            "Created key %s for user %s",
+            (self.public_key.n, self.public_key.e),
+            self.user_name,
+        )
+
         self.receiver_name = ""
         self.message = ""
         self.response: bytes | None = None
+        self.session_token: bytes | None = None
 
     @staticmethod
     def parse_hostname(host_name: str) -> str:
@@ -184,24 +195,32 @@ class Client(CommandLineApplication):
             self.receiver_name,
             self.message,
         )
-        self.send_request(request)
+        self.send_request(request, expect_response=False)
 
     def send_login_request(self) -> None:
         """Send a login request to the server."""
-        logger.info("Logging in user")
+        request = LoginRequest(self.user_name)
+        response = self.send_request(request)
+
+        message_type, packet = Packet.decode_packet(response)
+        if message_type != MessageType.LOGIN:
+            raise RuntimeError("Recieved incorrect type response from server")
+
+        (encrypted_session_token,) = LoginResponse.decode_packet(packet)
+        logger.debug("Received encrypted token bytes %s", encrypted_session_token)
+
+        if len(encrypted_session_token) == 0:
+            logger.error("You are not registered! Please register before logging in")
+            raise SystemExit
+
+        self.session_token = rsa.decrypt(encrypted_session_token, self.__private_key)
+        logger.debug("Storing provided session token %s", self.session_token)
+        logger.info("Now logged in as %s", self.user_name)
 
     def send_registration_request(self) -> None:
-        """Send a login request to the server."""
-        public_key, _private_key = RSA()
-
-        logger.info(
-            "Created key %s for user %s",
-            (public_key.product, public_key.exponent),
-            self.user_name,
-        )
-
-        request = RegistrationRequest(self.user_name, public_key)
-        self.send_request(request)
+        """Send a registration request to the server."""
+        request = RegistrationRequest(self.user_name, self.public_key)
+        self.send_request(request, expect_response=False)
 
     def send_key_request(self, receiver_name: str | None) -> None:
         """Send a pubblic key request to the server."""
@@ -211,15 +230,16 @@ class Client(CommandLineApplication):
         request = KeyRequest(receiver_name)
         response = self.send_request(request)
         message_type, payload = Packet.decode_packet(response)
+
         if message_type != MessageType.KEY_RESPONSE:
-            raise ValueError("Wrong response type!")
+            raise ValueError("Recieved incorrect type response from server")
 
         (public_key,) = KeyResponse.decode_packet(payload)
 
         logger.info(
             "Received %s's key:\n%s",
             receiver_name,
-            (public_key.product, public_key.exponent),
+            (public_key.n, public_key.e),
         )
 
     def run(
