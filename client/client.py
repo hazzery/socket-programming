@@ -131,7 +131,7 @@ class Client(CommandLineApplication):
 
         message_type: MessageType
         packet: bytes
-        message_type, packet = Packet.decode_packet(response)
+        message_type, _, packet = Packet.decode_packet(response)
 
         if message_type != MessageType.READ_RESPONSE:
             raise RuntimeError("Incorrect type message recieved from the server.")
@@ -150,7 +150,7 @@ class Client(CommandLineApplication):
         :param message: The message to be sent.
         """
         if self.session_token is None:
-            logger.error("Please log in before send messages")
+            logger.error("Please log in before sending messages")
             raise SystemExit
 
         if receiver_name is None:
