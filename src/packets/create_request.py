@@ -64,7 +64,10 @@ class CreateRequest(Packet, struct_format="!BH", message_type=MessageType.CREATE
     def decode_packet(cls, packet: bytes) -> tuple[str, bytes]:
         """Decode a message request packet.
 
-        :param packet: An array of bytes containing the create request
+        :param packet: An array of bytes containing the create request.
+        :raises ValueError: If the packet has incorrect values.
+        :return: A tuple containing the name of the message recipient
+        and the message itself.
         """
         header_fields, payload = cls.split_packet(packet)
         (

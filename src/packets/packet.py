@@ -83,6 +83,7 @@ class Packet(metaclass=abc.ABCMeta):
 
         if magic_number != cls.MAGIC_NUMBER:
             raise ValueError("Incorrect magic number found in packet")
+
         try:
             message_type = MessageType(message_type_number)
         except ValueError as error:
