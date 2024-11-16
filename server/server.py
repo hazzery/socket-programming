@@ -4,6 +4,8 @@ import logging
 import secrets
 import socket
 from collections import OrderedDict
+from collections.abc import Callable, Mapping
+from typing import Final, TypeAlias
 
 import rsa
 
@@ -71,49 +73,41 @@ class Server(CommandLineApplication):
             raise SystemExit from error
 
     @staticmethod
-    def send_response(response: Packet, connection_socket: socket.socket) -> None:
-        """Send a response to the client's request.
-
-        :param response: The response object.
-        :param connection_socket: The socket to send the response over.
-        """
-        record = response.to_bytes()
-        connection_socket.send(record)
-
-    @staticmethod
     def generate_session_token() -> bytes:
         """Generate a random session token."""
         return secrets.token_bytes()
 
     def process_read_request(
         self,
-        session_token: bytes | None,
+        requestor_username: str | None,
         _packet: bytes,
-        connection_socket: socket.socket,
-    ) -> None:
+    ) -> bytes:
         """Respond to read requests.
 
         :param packet: The read request packet to process.
         :param connection_socket: The connection socket to send the response on.
         """
-        if session_token not in self.sessions:
-            return
+        if requestor_username is None:
+            logger.info(
+                "Received unauthenticated read request, responding without messages",
+            )
+            return ReadResponse([]).to_bytes()
 
-        sender_name = self.sessions[session_token]
+        messages = self.messages.get(requestor_username, []).copy()
+        response = ReadResponse(messages)
+        del self.messages.get(requestor_username, [])[: response.num_messages]
 
-        response = ReadResponse(self.messages.get(sender_name, []))
-        self.send_response(response, connection_socket)
-
-        del self.messages.get(sender_name, [])[: response.num_messages]
         logger.info(
             "%s message(s) delivered to %s",
             response.num_messages,
-            sender_name,
+            requestor_username,
         )
+
+        return response.to_bytes()
 
     def process_create_request(
         self,
-        session_token: bytes | None,
+        requestor_username: str | None,
         packet: bytes,
     ) -> None:
         """Process create requests.
@@ -121,30 +115,28 @@ class Server(CommandLineApplication):
         :param session_token: The token provided by the client.
         :param packet: The packet provided by the client.
         """
-        if session_token not in self.sessions:
+        if requestor_username is None:
             logger.info("Received unauthenticated create request, ignoreing")
             return
-
-        sender_name = self.sessions[session_token]
 
         receiver_name, message = CreateRequest.decode_packet(packet)
 
         if receiver_name not in self.messages:
             self.messages[receiver_name] = []
 
-        self.messages[receiver_name].append((sender_name, message))
+        self.messages[receiver_name].append((requestor_username, message))
         logger.info(
             'Storing %s\'s message to %s: "%s"',
-            sender_name,
+            requestor_username,
             receiver_name,
             message.decode(),
         )
 
     def process_login_request(
         self,
+        _requestor_username: str | None,
         packet: bytes,
-        connection_socket: socket.socket,
-    ) -> None:
+    ) -> bytes:
         """Process a client requset to login.
 
         :param packet: A byte array containing the login request.
@@ -152,10 +144,8 @@ class Server(CommandLineApplication):
         (sender_name,) = LoginRequest.decode_packet(packet)
 
         if sender_name not in self.users:
-            response = LoginResponse(b"")
-            self.send_response(response, connection_socket)
             logger.info("Unregistered user %s attempted to login", sender_name)
-            return
+            return LoginResponse(b"").to_bytes()
 
         session_token = self.generate_session_token()
         self.sessions[session_token] = sender_name
@@ -164,32 +154,37 @@ class Server(CommandLineApplication):
         senders_public_key = self.users[sender_name]
         encrypted_session_token = rsa.encrypt(session_token, senders_public_key)
         logger.debug("Encrypted token to %s", encrypted_session_token)
-        response = LoginResponse(encrypted_session_token)
-        self.send_response(response, connection_socket)
 
-    def process_registration_request(self, packet: bytes) -> None:
+        return LoginResponse(encrypted_session_token).to_bytes()
+
+    def process_registration_request(
+        self,
+        _requestor_username: str | None,
+        packet: bytes,
+    ) -> None:
         """Process a client request to register a new name.
 
         :param packet: A byte array containing the registration request.
         """
         sender_name, public_key = RegistrationRequest.decode_packet(packet)
-        if sender_name not in self.users:
-            self.users[sender_name] = public_key
-            logger.info(
-                "Registered %s with key %s",
-                sender_name,
-                (public_key.n, public_key.e),
-            )
 
-        else:
-            message = f"name {sender_name} already registered"
+        if sender_name in self.users:
+            message = f"Name {sender_name} already registered"
             logger.error(message)
+            return
+
+        self.users[sender_name] = public_key
+        logger.info(
+            "Registered %s with key %s",
+            sender_name,
+            (public_key.n, public_key.e),
+        )
 
     def process_key_request(
         self,
+        _requestor_username: str | None,
         packet: bytes,
-        connection_socket: socket.socket,
-    ) -> None:
+    ) -> bytes:
         """Process a client request for a user's public key.
 
         :param packet: A byte array containing the key request.
@@ -199,8 +194,7 @@ class Server(CommandLineApplication):
         logger.info("Received request for %s's key", requested_user)
 
         public_key = self.users[requested_user]
-        response = KeyResponse(public_key)
-        self.send_response(response, connection_socket)
+        return KeyResponse(public_key).to_bytes()
 
     def process_request(self, packet: bytes, connection_socket: socket.socket) -> None:
         """Process an incoming client request.
@@ -213,24 +207,20 @@ class Server(CommandLineApplication):
 
         message_type, session_token, packet = Packet.decode_packet(packet)
 
-        match message_type:
-            case MessageType.READ:
-                self.process_read_request(session_token, packet, connection_socket)
+        if session_token is not None:
+            requestor_username = self.sessions.get(session_token, None)
+        else:
+            requestor_username = None
 
-            case MessageType.CREATE:
-                self.process_create_request(session_token, packet)
+        if message_type not in PROCESS_REQUEST_MAPPING:
+            logging.error("Message of incorrect type received!")
+            return
 
-            case MessageType.LOGIN:
-                self.process_login_request(packet, connection_socket)
+        processor_function = PROCESS_REQUEST_MAPPING[message_type]
+        response = processor_function(self, requestor_username, packet)
 
-            case MessageType.REGISTER:
-                self.process_registration_request(packet)
-
-            case MessageType.KEY:
-                self.process_key_request(packet, connection_socket)
-
-            case _:
-                logging.error("Message of incorrect type received!")
+        if response is not None:
+            connection_socket.send(response)
 
     def run_server(self, welcoming_socket: socket.socket) -> None:
         """Run the server side of the program.
@@ -264,3 +254,13 @@ class Server(CommandLineApplication):
         """Stop the server."""
         logger.info("Stopping server.")
         self.running = False
+
+
+ServerProcessFunction: TypeAlias = Callable[[Server, str | None, bytes], bytes | None]
+PROCESS_REQUEST_MAPPING: Final[Mapping[MessageType, ServerProcessFunction]] = {
+    MessageType.REGISTER: Server.process_registration_request,
+    MessageType.LOGIN: Server.process_login_request,
+    MessageType.KEY: Server.process_key_request,
+    MessageType.CREATE: Server.process_create_request,
+    MessageType.READ: Server.process_read_request,
+}
