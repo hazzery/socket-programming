@@ -16,7 +16,7 @@ class TestMessageResponseEncoding(unittest.TestCase):
             ("John", b"Hello Harry!"),
         ]
         packet = ReadResponse(messages).to_bytes()
-        _, packet = Packet.decode_packet(packet)
+        _, _, packet = Packet.decode_packet(packet)
 
         expected = len(messages)
         actual = packet[0]
@@ -26,7 +26,7 @@ class TestMessageResponseEncoding(unittest.TestCase):
         """Tests that the more messages flag is encoded correctly."""
         messages: list[tuple[str, bytes]] = []
         packet = ReadResponse(messages).to_bytes()
-        _, packet = Packet.decode_packet(packet)
+        _, _, packet = Packet.decode_packet(packet)
 
         expected = False
         actual = packet[1]
@@ -44,7 +44,7 @@ class TestMessageResponseDecoding(unittest.TestCase):
         ]
         packet = ReadResponse(messages).to_bytes()
 
-        _, packet = Packet.decode_packet(packet)
+        _, _, packet = Packet.decode_packet(packet)
 
         expected = [
             ("Harry", "Hello John!"),
@@ -60,7 +60,7 @@ class TestMessageResponseDecoding(unittest.TestCase):
             ("John", b"Hello Harry!"),
         ]
         packet = ReadResponse(messages).to_bytes()
-        _, packet = Packet.decode_packet(packet)
+        _, _, packet = Packet.decode_packet(packet)
 
         expected = False
         actual = ReadResponse.decode_packet(packet)[1]
@@ -71,7 +71,7 @@ class TestMessageResponseDecoding(unittest.TestCase):
         messages = [("Harry", b"Hello John!")] * 256
         packet = ReadResponse(messages).to_bytes()
 
-        _, packet = Packet.decode_packet(packet)
+        _, _, packet = Packet.decode_packet(packet)
 
         expected = True
         actual = ReadResponse.decode_packet(packet)[1]

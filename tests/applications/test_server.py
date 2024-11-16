@@ -1,12 +1,14 @@
 """Server class test suite."""
 
-import socket
 import unittest
 
 from server import Server
+from src.message_type import MessageType
 from src.packets.packet import Packet
 from src.packets.read_request import ReadRequest
 from src.packets.read_response import ReadResponse
+
+DUMMY_SESSION_TOKEN = b"01234567890123456789012345678901"
 
 
 class TestServer(unittest.TestCase):
@@ -30,29 +32,24 @@ class TestServer(unittest.TestCase):
     def test_process_read_request(self) -> None:
         """Tests that Server objects correctly responds to read requests."""
         server = Server([str(TestServer.port_number)])
-        receiver_name = "John"
+
         sender_name = "Alice"
+        receiver_name = "John"
         message = b"Hello John"
+
+        server.sessions = {DUMMY_SESSION_TOKEN: receiver_name}
         server.messages[receiver_name] = [(sender_name, message)]
 
-        with socket.socket() as server_welcoming_socket:
-            server_welcoming_socket.bind((TestServer.hostname, TestServer.port_number))
-            server_welcoming_socket.listen(1)
+        request = ReadRequest(DUMMY_SESSION_TOKEN, receiver_name).to_bytes()
 
-            with socket.socket() as client_socket:
-                client_socket.connect((TestServer.hostname, TestServer.port_number))
-                server_connection_socket, _ = server_welcoming_socket.accept()
+        _, _, packet = Packet.decode_packet(request)
 
-                packet = ReadRequest(receiver_name).to_bytes()
-                _, packet = Packet.decode_packet(packet)
+        response = server.process_read_request(receiver_name, packet)
+        message_type, session_token, payload = Packet.decode_packet(response)
 
-                with server_connection_socket:
-                    server.process_read_request(packet, server_connection_socket)
+        messages, more_messages = ReadResponse.decode_packet(payload)
 
-                # Receive message from server
-                response_packet = client_socket.recv(1024)
-                _, response_packet = Packet.decode_packet(response_packet)
-                response = ReadResponse.decode_packet(response_packet)
-
-                # Check that the message is correct
-                self.assertEqual(([(sender_name, message.decode())], False), response)
+        self.assertEqual(MessageType.READ_RESPONSE, message_type)
+        self.assertEqual(None, session_token)
+        self.assertEqual([(sender_name, message.decode())], messages)
+        self.assertEqual(False, more_messages)

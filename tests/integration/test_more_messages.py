@@ -5,8 +5,6 @@ import sys
 import threading
 import unittest
 
-from src.packets.packet import Packet
-
 sys.path.insert(0, "../../")
 import client
 import server
@@ -25,7 +23,7 @@ class TestMoreMessages(unittest.TestCase):
 
     HOST_NAME = "localhost"
     PORT_NUMBER = "1024"
-    USER_NAME = "John"
+    RECIPIENT_NAME = "Recipient"
 
     def test_more_messages(self) -> None:
         """Tests that no more than 255 messages are sent in a read request."""
@@ -35,20 +33,24 @@ class TestMoreMessages(unittest.TestCase):
         server_thread = threading.Thread(target=server_object.run)
         server_thread.start()
 
-        for name in names:
-            client.Client(
-                [self.HOST_NAME, self.PORT_NUMBER, name, "create"],
-            ).run(receiver_name=self.USER_NAME, message="Hello")
-
-        final_client = client.Client(
-            [self.HOST_NAME, self.PORT_NUMBER, self.USER_NAME, "read"],
+        recipient_client = client.Client(
+            [self.HOST_NAME, self.PORT_NUMBER, self.RECIPIENT_NAME, "read"],
         )
-        final_client.run()
+        recipient_client.send_registration_request()
+
+        for sender_name in names:
+            sender_client = client.Client(
+                [self.HOST_NAME, self.PORT_NUMBER, sender_name, "create"],
+            )
+            sender_client.send_registration_request()
+            sender_client.send_login_request()
+            sender_client.send_create_request(self.RECIPIENT_NAME, "Hello")
+
+        recipient_client.send_login_request()
+        packet = recipient_client.send_read_request()
 
         server_object.stop()
         server_thread.join()
-
-        _, packet = Packet.decode_packet(final_client.result)
 
         messages, more_messages = ReadResponse.decode_packet(packet)
         self.assertEqual(255, len(messages))
