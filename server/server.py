@@ -193,6 +193,9 @@ class Server(CommandLineApplication):
         (requested_user,) = KeyRequest.decode_packet(packet)
         logger.info("Received request for %s's key", requested_user)
 
+        if requested_user not in self.users:
+            return KeyResponse(None).to_bytes()
+
         public_key = self.users[requested_user]
         return KeyResponse(public_key).to_bytes()
 

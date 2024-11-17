@@ -44,6 +44,7 @@ class TestMoreMessages(unittest.TestCase):
             )
             sender_client.send_registration_request()
             sender_client.send_login_request()
+            sender_client.send_key_request(self.RECIPIENT_NAME)
             sender_client.send_create_request(self.RECIPIENT_NAME, "Hello")
 
         recipient_client.send_login_request()

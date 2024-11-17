@@ -227,11 +227,14 @@ class Client(CommandLineApplication):
 
         (public_key,) = KeyResponse.decode_packet(packet)
 
-        logger.info(
-            "Received %s's key:\n%s",
-            receiver_name,
-            (public_key.n, public_key.e),
-        )
+        if public_key is None:
+            logger.warning("The requested user is not registered")
+        else:
+            logger.info(
+                "Received %s's key:\n%s",
+                receiver_name,
+                (public_key.n, public_key.e),
+            )
 
         return packet
 

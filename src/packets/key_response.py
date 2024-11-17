@@ -20,7 +20,7 @@ class KeyResponse(
 ):
     """Encode and decode public key response packets."""
 
-    def __init__(self, public_key: rsa.PublicKey) -> None:
+    def __init__(self, public_key: rsa.PublicKey | None) -> None:
         """Create a key response packet."""
         super().__init__()
         self.public_key = public_key
@@ -29,6 +29,12 @@ class KeyResponse(
         """Encode the key response packet into a byte array."""
         logging.info("Creating key response")
 
+        packet = super().to_bytes()
+
+        if self.public_key is None:
+            packet += struct.pack(self.struct_format, 0, 0)
+            return packet
+
         product = self.public_key.n.to_bytes(
             (self.public_key.n.bit_length() + 7) // 8,
         )
@@ -36,8 +42,6 @@ class KeyResponse(
         exponent = self.public_key.e.to_bytes(
             (self.public_key.e.bit_length() + 7) // 8,
         )
-
-        packet = super().to_bytes()
 
         packet += struct.pack(
             self.struct_format,
@@ -51,7 +55,7 @@ class KeyResponse(
         return packet
 
     @classmethod
-    def decode_packet(cls, packet: bytes) -> tuple[rsa.PublicKey]:
+    def decode_packet(cls, packet: bytes) -> tuple[rsa.PublicKey | None]:
         """Decode the key response packet into its individual components.
 
         :param packet: The packet to be decoded.
@@ -59,6 +63,9 @@ class KeyResponse(
         """
         header_fields, payload = cls.split_packet(packet)
         product_length, exponent_length = header_fields
+
+        if product_length == 0 or exponent_length == 0:
+            return (None,)
 
         product = int.from_bytes(payload[:product_length])
         index = product_length
