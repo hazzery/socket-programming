@@ -3,6 +3,8 @@
 import logging
 import socket
 from collections import OrderedDict
+from collections.abc import Callable, Mapping
+from typing import Final, TypeAlias
 
 import rsa
 
@@ -66,6 +68,7 @@ class Client(CommandLineApplication):
         )
 
         self.session_token: bytes | None = None
+        self.key_cache: dict[str, rsa.PublicKey] = {}
 
     def send_request(self, request: Packet, *, expect_response: bool = True) -> bytes:
         """Send a message request record to the server.
@@ -99,6 +102,108 @@ class Client(CommandLineApplication):
         )
 
         return response
+
+    def send_registration_request(self) -> None:
+        """Send a registration request to the server."""
+        request = RegistrationRequest(self.user_name, self.public_key)
+        self.send_request(request, expect_response=False)
+
+    def send_login_request(self) -> bytes:
+        """Send a login request to the server.
+
+        :raises RuntimeError: If the server sends an incorrect response.
+        :return: The LoginResponse packet from the server.
+        """
+        request = LoginRequest(self.user_name)
+        response = self.send_request(request)
+
+        message_type: MessageType
+        packet: bytes
+        message_type, _, packet = Packet.decode_packet(response)
+        if message_type != MessageType.LOGIN_RESPONSE:
+            raise RuntimeError("Recieved incorrect type response from server")
+
+        (encrypted_session_token,) = LoginResponse.decode_packet(packet)
+        logger.debug("Received encrypted token bytes %s", encrypted_session_token)
+
+        if len(encrypted_session_token) == 0:
+            logger.error("You are not registered! Please register before logging in")
+            raise SystemExit
+
+        self.session_token = rsa.decrypt(encrypted_session_token, self.__private_key)
+        logger.debug("Storing provided session token %s", self.session_token)
+        logger.info("Now logged in as %s", self.user_name)
+
+        return packet
+
+    def send_key_request(self, receiver_name: str | None = None) -> bytes:
+        """Send a pubblic key request to the server.
+
+        :param receiver_name: The name of the user who's key should be requested.
+        :return: The KeyResponse packet from the server.
+        """
+        if not receiver_name:
+            receiver_name = input("Who's key are we requesting? ")
+
+        request = KeyRequest(receiver_name)
+        response = self.send_request(request)
+
+        message_type: MessageType
+        packet: bytes
+        message_type, _, packet = Packet.decode_packet(response)
+
+        if message_type != MessageType.KEY_RESPONSE:
+            logger.error("Recieved incorrect type response from server")
+            raise SystemExit
+
+        (public_key,) = KeyResponse.decode_packet(packet)
+
+        if public_key is None:
+            logger.warning("The requested user is not registered")
+        else:
+            logger.info(
+                "Received %s's key:\n%s",
+                receiver_name,
+                (public_key.n, public_key.e),
+            )
+
+        return packet
+
+    def send_create_request(
+        self,
+        receiver_name: str | None = None,
+        message: str | None = None,
+    ) -> None:
+        """Send a create request to the server.
+
+        :param receiver_name: The name of the person to send the messag to.
+        :param message: The message to be sent.
+        """
+        if self.session_token is None:
+            logger.error("Please log in before sending messages")
+            raise SystemExit
+
+        if receiver_name is None:
+            receiver_name = input("Enter the name of the receiver: ")
+
+        if message is None:
+            message = input("Enter the message to be sent: ")
+
+        logger.debug(
+            'User specified message to %s: "%s"',
+            receiver_name,
+            message,
+        )
+
+        # encrypted_message = rsa.encrypt(message.encode(),
+        # self.key_cache[receiver_name])
+
+        request = CreateRequest(
+            self.session_token,
+            receiver_name,
+            message,
+        )
+        self.send_request(request, expect_response=False)
 
     @staticmethod
     def read_message_response(packet: bytes) -> None:
@@ -139,105 +244,6 @@ class Client(CommandLineApplication):
         self.read_message_response(packet)
         return packet
 
-    def send_create_request(
-        self,
-        receiver_name: str | None,
-        message: str | None,
-    ) -> None:
-        """Send a create request to the server.
-
-        :param receiver_name: The name of the person to send the messag to.
-        :param message: The message to be sent.
-        """
-        if self.session_token is None:
-            logger.error("Please log in before sending messages")
-            raise SystemExit
-
-        if receiver_name is None:
-            receiver_name = input("Enter the name of the receiver: ")
-
-        if message is None:
-            message = input("Enter the message to be sent: ")
-
-        logger.debug(
-            'User specified message to %s: "%s"',
-            receiver_name,
-            message,
-        )
-
-        request = CreateRequest(
-            self.session_token,
-            receiver_name,
-            message,
-        )
-        self.send_request(request, expect_response=False)
-
-    def send_login_request(self) -> bytes:
-        """Send a login request to the server.
-
-        :raises RuntimeError: If the server sends an incorrect response.
-        :return: The LoginResponse packet from the server.
-        """
-        request = LoginRequest(self.user_name)
-        response = self.send_request(request)
-
-        message_type: MessageType
-        packet: bytes
-        message_type, _, packet = Packet.decode_packet(response)
-        if message_type != MessageType.LOGIN_RESPONSE:
-            raise RuntimeError("Recieved incorrect type response from server")
-
-        (encrypted_session_token,) = LoginResponse.decode_packet(packet)
-        logger.debug("Received encrypted token bytes %s", encrypted_session_token)
-
-        if len(encrypted_session_token) == 0:
-            logger.error("You are not registered! Please register before logging in")
-            raise SystemExit
-
-        self.session_token = rsa.decrypt(encrypted_session_token, self.__private_key)
-        logger.debug("Storing provided session token %s", self.session_token)
-        logger.info("Now logged in as %s", self.user_name)
-
-        return packet
-
-    def send_registration_request(self) -> None:
-        """Send a registration request to the server."""
-        request = RegistrationRequest(self.user_name, self.public_key)
-        self.send_request(request, expect_response=False)
-
-    def send_key_request(self, receiver_name: str | None) -> bytes:
-        """Send a pubblic key request to the server.
-
-        :param receiver_name: The name of the user who's key should be requested.
-        :return: The KeyResponse packet from the server.
-        """
-        if not receiver_name:
-            receiver_name = input("Who's key are we requesting? ")
-
-        request = KeyRequest(receiver_name)
-        response = self.send_request(request)
-
-        message_type: MessageType
-        packet: bytes
-        message_type, _, packet = Packet.decode_packet(response)
-
-        if message_type != MessageType.KEY_RESPONSE:
-            logger.error("Recieved incorrect type response from server")
-            raise SystemExit
-
-        (public_key,) = KeyResponse.decode_packet(packet)
-
-        if public_key is None:
-            logger.warning("The requested user is not registered")
-        else:
-            logger.info(
-                "Received %s's key:\n%s",
-                receiver_name,
-                (public_key.n, public_key.e),
-            )
-
-        return packet
-
     def run(self) -> None:
         """Ask the user to input message and send request to server.
 
@@ -246,21 +252,19 @@ class Client(CommandLineApplication):
         :param message: The message to send. Will request from
         ``stdin`` if not present. Defaults to ``None``.
         """
-        match self.message_type:
-            case MessageType.READ:
-                self.send_read_request()
+        if self.message_type not in SEND_REQUEST_MAPPING:
+            logging.error("Given message type is not a valid request!")
+            return
 
-            case MessageType.CREATE:
-                self.send_create_request(None, None)
+        send_function = SEND_REQUEST_MAPPING[self.message_type]
+        send_function(self)
 
-            case MessageType.LOGIN:
-                self.send_login_request()
 
-            case MessageType.REGISTER:
-                self.send_registration_request()
-
-            case MessageType.KEY:
-                self.send_key_request(None)
-
-            case _:
-                logger.error("Oopsies, wrong message type!")
+ClientSendFunction: TypeAlias = Callable[[Client], bytes | None]
+SEND_REQUEST_MAPPING: Final[Mapping[MessageType, ClientSendFunction]] = {
+    MessageType.REGISTER: Client.send_registration_request,
+    MessageType.LOGIN: Client.send_login_request,
+    MessageType.KEY: Client.send_key_request,
+    MessageType.CREATE: Client.send_create_request,
+    MessageType.READ: Client.send_read_request,
+}
