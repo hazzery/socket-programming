@@ -1,10 +1,10 @@
 """Home to the ``CommandLineApplication`` abstract class."""
 
-from collections import OrderedDict
-from typing import Callable, Any
-import logging
 import abc
-
+import logging
+from collections import OrderedDict
+from collections.abc import Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def __init__(self, parameters: OrderedDict[str, Callable[[str], Any]]):
+    def __init__(self, parameters: OrderedDict[str, Callable[[str], Any]]) -> None:
         """Initialise the command line application.
 
         :param parameters: A dictionary containing the parameters for
@@ -33,25 +33,29 @@ class CommandLineApplication(metaclass=abc.ABCMeta):
         """
         return f"Usage: python3 {' '.join(self.parameters)}"
 
-    def parse_arguments(self, arguments: list[str]) -> list[Any]:
+    def parse_arguments(self, arguments: list[str]) -> tuple[Any, ...]:
         """Parse the command line arguments, ensuring they are valid.
 
         :param arguments: The command line arguments.
         """
-        parsed_arguments = []
-        try:
-            if len(arguments) != len(self.parameters):
-                raise ValueError(
-                    f"Invalid number of arguments, must be {len(self.parameters)}"
-                )
+        if len(arguments) != len(self.parameters):
+            message = f"Invalid number of arguments, must be {len(self.parameters)}"
+            logger.error(self.usage_prompt)
+            logger.error(message)
+            raise SystemExit(message)
 
-            for argument, parser in zip(arguments, self.parameters.values()):
-                parsed_argument = parser(argument)
-                parsed_arguments.append(parsed_argument)
-        except (TypeError, ValueError) as error:
-            logger.error(error)
-            print(self.usage_prompt)
-            print(error)
+        try:
+            parsed_arguments = tuple(
+                parser(argument)
+                for argument, parser in zip(
+                    arguments,
+                    self.parameters.values(),
+                    strict=False,
+                )
+            )
+        except (ValueError, TypeError) as error:
+            logger.log(logging.ERROR, "%s\n%s", self.usage_prompt, error)
+            logger.debug(error, exc_info=True)
             raise SystemExit from error
 
         return parsed_arguments

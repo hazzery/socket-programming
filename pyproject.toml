@@ -1,16 +1,16 @@
 [project]
 name = "socket-programming"
 version = "1.0.0"
-authors = [
-  { name="Harry Parkes", email="harrydparkes@proton.me" },
-]
+authors = [{ name = "Harry Parkes", email = "harrydparkes@proton.me" }]
 description = "Sever-Client program pair capable of delivering messages between clients"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
+dependencies = ["rsa"]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: GNU AGPL",
-    "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: GNU Affero General Public License v3",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Education",
 ]
 
 [project.urls]
@@ -21,7 +21,14 @@ classifiers = [
 exclude = ["docs/conf.py"]
 
 [tool.ruff.lint]
-# Enable Pyflakes (`F`), a subset of the pycodestyle (`E`) codes, and  pydocstyle (`D`)
-select = ["E4", "E7", "E9", "F", "D", "PL"]
-ignore = ["D203", "D213"]
-
+select = ["ALL"]
+ignore = [
+  "D203",
+  "D213",
+  "EM101",
+  "TRY003",
+  "FBT001",
+  "ANN101",
+  "ANN102",
+  "PT",
+]

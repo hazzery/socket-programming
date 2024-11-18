@@ -7,8 +7,8 @@ import logging
 import sys
 
 from logging_config import configure_logging
-from .server import Server
 
+from .server import Server
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,7 @@ def main() -> None:
     except SystemExit:
         sys.exit(1)
     except KeyboardInterrupt:
-        logger.info("Server shut down due to keyboard interrupt")
-        print("\nServer shut down")
+        logger.info("Server shut down")
         sys.exit(0)
 
 

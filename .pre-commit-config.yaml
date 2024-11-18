@@ -27,7 +27,7 @@ repos:
         name: run unit tests
         pass_filenames: false
         entry: python3 -m unittest
-        args: ["discover", "--start-directory", "/home/harry/PycharmProjects/socket-programming/tests"]
+        args: ["discover", "."]
         language: system
         stages: [pre-push]
         types: [python]

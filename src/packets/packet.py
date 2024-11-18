@@ -1,16 +1,17 @@
 """Home to the ``Packet`` abstract class."""
 
-from typing import Any
-import struct
 import abc
+import re
+import struct
+from typing import Any
 
 
 class Packet(metaclass=abc.ABCMeta):
     """Abstract class for all packets.
 
-    All classes inheriting ``Packet`` must specify ``struct_format``
-    in their class attributes. The format of ``struct_format`` is as
-    described in https://docs.python.org/3/library/struct.html
+    All classes inheriting ``Packet`` must specify  ``struct_format`` in
+    their class attributes. The format of ``struct_format`` is as described in
+    https://docs.python.org/3/library/struct.html.
 
     Example::
 
@@ -18,12 +19,12 @@ class Packet(metaclass=abc.ABCMeta):
             pass
     """
 
-    MAGIC_NUMBER = 0xAE73
+    STRUCT_FORMAT_REGEX = re.compile("^[@=<>!]?[xcbB?hHiIlLqQnNefdspP]+$")
 
     struct_format: str
 
     @abc.abstractmethod
-    def __init__(self, *args: tuple[Any, ...]):
+    def __init__(self, *args: tuple[Any, ...]) -> None:
         """Initialise the packet.
 
         :param args: All arguments needed to initialise the packet.
@@ -34,17 +35,17 @@ class Packet(metaclass=abc.ABCMeta):
     def to_bytes(self) -> bytes:
         """Convert the packet into a ``bytes`` object.
 
-        :return: A ``bytes`` object encoding individual fields of the packet.
+        :return: A ``bytes`` object encoding the packet's message type.
         """
         raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod
     def decode_packet(cls, packet: bytes) -> tuple[Any, ...]:
-        """Decode the packet into a tuple of values.
+        """Decode the packet into its individual fields.
 
         :param packet: The packet to decode.
-        :return: A tuple of the decoded values extracted from the packet.
+        :return: A tuple of the decoded message type and the payload.
         """
         raise NotImplementedError
 
@@ -65,20 +66,20 @@ class Packet(metaclass=abc.ABCMeta):
         return header_fields, payload
 
     @classmethod
-    def __init_subclass__(
-        cls, struct_format: str | None = None, **kwargs: tuple[Any, ...]
-    ) -> None:
+    def __init_subclass__(cls, *, struct_format: str) -> None:
         """Ensure ``struct_format`` attribute is present.
 
         All subclasses of ``Packet`` must specify a ``struct_format``
         in their class attributes. This is used for packing and
         unpacking the data into a minimal package.
 
+        :param message_type: The type of message the packet will encode.
         :param struct_format: The format of the packet data for the ``struct`` module.
-        :param kwargs: No additional kwargs will be accepted.
-        """
-        if not struct_format:
-            raise ValueError("Must specify struct format")
 
-        super().__init_subclass__(**kwargs)
+        :raises ValueError: if the provided struct format is invalid.
+        """
+        if not re.match(Packet.STRUCT_FORMAT_REGEX, struct_format):
+            raise ValueError("Invalid struct format")
+
+        super().__init_subclass__()
         cls.struct_format = struct_format

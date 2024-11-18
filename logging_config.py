@@ -4,10 +4,10 @@ Applies formatting and specifies output locations
 for all module loggers.
 """
 
-from datetime import datetime
+import datetime
 import logging
+import pathlib
 import sys
-import os
 
 
 # pylint: disable=too-few-public-methods
@@ -26,31 +26,35 @@ class PathnameFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Make the filename clickable in PyCharm."""
         record.pathname = record.name.replace(".", "/") + ".py:" + str(record.lineno)
+
+        # Remove newlines from logs being sent to a file
+        record.msg = record.msg.lstrip("\n").replace("\n", " ")
         return super().format(record)
 
 
 def configure_logging(package_name: str) -> None:
     """Configure logging for the project."""
     file_formatter = PathnameFormatter(
-        "%(asctime)s - %(levelname)-8s - %(pathname)-35s - %(message)s"
+        "%(asctime)s - %(levelname)-8s - %(pathname)-35s - %(message)s",
     )
     file_formatter.datefmt = "%d-%m-%y - %H:%M:%S.%s"
 
-    file_name = datetime.now().strftime("%d-%m-%y %H:%M:%S")
+    # ruff: noqa: DTZ005
+    file_name = datetime.datetime.now().strftime("%d-%m-%y %H:%M:%S")
 
-    os.makedirs(os.path.dirname(f"logs/{package_name}/"), exist_ok=True)
-    file_handler = logging.FileHandler(f"logs/{package_name}/{file_name}.log")
+    log_folder = pathlib.Path("logs") / package_name
+    log_folder.mkdir(parents=True, exist_ok=True)
+
+    file_handler = logging.FileHandler(log_folder / (file_name + ".log"))
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
 
-    console_formatter = PathnameFormatter(
-        "%(levelname)-8s - %(pathname)-35s - %(message)s"
-    )
+    console_formatter = logging.Formatter("%(message)s")
 
-    # stdout_handler = logging.StreamHandler(sys.stdout)
-    # stdout_handler.setLevel(logging.DEBUG)
-    # stdout_handler.addFilter(StdoutHandlerFilter())
-    # stdout_handler.setFormatter(console_formatter)
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.INFO)
+    stdout_handler.addFilter(StdoutHandlerFilter())
+    stdout_handler.setFormatter(console_formatter)
 
     stderr_handler = logging.StreamHandler(sys.stderr)
     stderr_handler.setLevel(logging.WARNING)
@@ -58,5 +62,5 @@ def configure_logging(package_name: str) -> None:
 
     logging.basicConfig(
         level=logging.DEBUG,
-        handlers=[file_handler, stderr_handler],
+        handlers=[stdout_handler, stderr_handler, file_handler],
     )

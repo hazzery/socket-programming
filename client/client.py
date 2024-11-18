@@ -1,16 +1,29 @@
 """The client module contains the Client class."""
 
-from collections import OrderedDict
-from typing import Optional
 import logging
 import socket
+from collections import OrderedDict
+from collections.abc import Callable, Mapping
+from typing import Final, TypeAlias
+
+import rsa
 
 from src.command_line_application import CommandLineApplication
-from src.packets.message_response import MessageResponse
-from src.packets.message_request import MessageRequest
 from src.message_type import MessageType
+from src.packets.create_request import CreateRequest
+from src.packets.key_request import KeyRequest
+from src.packets.key_response import KeyResponse
+from src.packets.login_request import LoginRequest
+from src.packets.login_response import LoginResponse
+from src.packets.packet import Packet
+from src.packets.read_request import ReadRequest
+from src.packets.read_response import ReadResponse
+from src.packets.registration_request import RegistrationRequest
+from src.packets.session_wrapper import SessionWrapper
+from src.packets.type_wrapper import TypeWrapper
+from src.parse_hostname import parse_hostname
+from src.parse_username import parse_username
 from src.port_number import PortNumber
-
 
 logger = logging.getLogger(__name__)
 
@@ -18,112 +31,184 @@ logger = logging.getLogger(__name__)
 class Client(CommandLineApplication):
     """Send and receives messages to and from the server."""
 
-    MAX_USERNAME_LENGTH = 255
-
-    def __init__(self, arguments: list[str]):
+    def __init__(self, arguments: list[str]) -> None:
         """Initialise the client with specified arguments.
 
-        :param arguments: A list containing the host name, port number
-        , username, and message type.
+        :param arguments: A list containing the host name, port number,
+        and username.
         """
         super().__init__(
             OrderedDict(
-                host_name=self.parse_hostname,
+                host_name=parse_hostname,
                 port_number=PortNumber,
-                user_name=self.parse_username,
-                message_type=MessageType.from_str,
-            )
+                user_name=parse_username,
+            ),
         )
 
-        # pylint thinks that self.parse_arguments is only capable
-        # of returning an empty list
-        # pylint: disable=unbalanced-tuple-unpacking
-        (
+        parsed_arguments: tuple[str, PortNumber, str]
+        parsed_arguments = self.parse_arguments(arguments)
+
+        self.host_name, self.port_number, self.user_name = parsed_arguments
+
+        logger.debug(
+            "Client for %s port %s created by %s",
             self.host_name,
             self.port_number,
             self.user_name,
-            self.message_type,
-        ) = self.parse_arguments(arguments)
-
-        logger.info(
-            "Client for %s port %s created by %s to send %s request",
-            self.host_name,
-            self.port_number,
-            self.user_name,
-            self.message_type.name.lower(),
         )
 
-        self.receiver_name = ""
-        self.message = ""
+        self.public_key, self.__private_key = rsa.newkeys(512)
 
-    @staticmethod
-    def parse_hostname(host_name: str) -> str:
-        """Parse the host name, ensuring it is valid.
+        logger.debug(
+            "Created key %s for user %s",
+            (self.public_key.n, self.public_key.e),
+            self.user_name,
+        )
 
-        :param host_name: String representing the host name.
-        :return: String of the host name.
-        :raises ValueError: If the host name is invalid.
-        """
-        try:
-            socket.getaddrinfo(host_name, 1024)
-        except socket.gaierror as error:
-            logger.error(error)
-            raise ValueError(
-                "Invalid host name, must be an IP address, domain name,"
-                ' or "localhost"'
-            ) from error
+        self.session_token: bytes | None = None
+        self.key_cache: dict[str, rsa.PublicKey] = {}
 
-        return host_name
-
-    @staticmethod
-    def parse_username(user_name: str) -> str:
-        """Parse the username, ensuring it is valid.
-
-        :param user_name: String representing the username.
-        :return: String of the username.
-        :raises ValueError: If the username is invalid.
-        """
-        if len(user_name) == 0:
-            logger.error("Username is empty")
-            raise ValueError("Username must not be empty")
-
-        if len(user_name.encode()) > Client.MAX_USERNAME_LENGTH:
-            logger.error("Username consumes more than 255 bytes")
-            raise ValueError("Username must consume at most 255 bytes")
-
-        return user_name
-
-    def send_message_request(self, request: MessageRequest) -> Optional[bytes]:
+    def send_request(
+        self,
+        request: Packet,
+        message_type: MessageType,
+        *,
+        expect_response: bool = True,
+    ) -> tuple[MessageType, bytes] | tuple[None, None]:
         """Send a message request record to the server.
 
         :param request: The message request to be sent.
         :return: The server's response if applicable, otherwise ``None``.
         """
-        packet = request.to_bytes()
-        response = None
+        response: tuple[MessageType, bytes] | tuple[None, None] = None, None
+
+        packet = TypeWrapper(
+            message_type,
+            SessionWrapper(self.session_token, request),
+        ).to_bytes()
+
         try:
             with socket.socket() as connection_socket:
                 connection_socket.settimeout(1)
                 connection_socket.connect((self.host_name, self.port_number))
                 connection_socket.send(packet)
-                if self.message_type == MessageType.READ:
-                    response = connection_socket.recv(4096)
+                if expect_response:
+                    response_packet = connection_socket.recv(4096)
+                    response = TypeWrapper.decode_packet(response_packet)
 
-        except ConnectionRefusedError as error:
-            logger.error(error)
-            print("Connection refused, likely due to invalid port number")
-            raise SystemExit from error
-        except socket.timeout as error:
-            logger.error(error)
-            print("Connection timed out, likely due to invalid host name")
+        except (ConnectionRefusedError, TimeoutError) as error:
+            message = (
+                "Connection refused, likely due to invalid port number"
+                if isinstance(error, ConnectionRefusedError)
+                else "Connection timed out, likely due to invalid host name"
+            )
+            logger.exception(message)
             raise SystemExit from error
 
         logger.info(
-            "%s record sent as %s", self.message_type.name.lower(), self.user_name
+            "%s record sent as %s",
+            message_type.name.capitalize(),
+            self.user_name,
         )
-        print(f"{self.message_type.name.lower()} record sent as {self.user_name}")
 
         return response
+
+    def send_registration_request(self) -> None:
+        """Send a registration request to the server."""
+        request = RegistrationRequest(self.user_name, self.public_key)
+        self.send_request(request, MessageType.REGISTER, expect_response=False)
+
+    def send_login_request(self) -> bytes:
+        """Send a login request to the server.
+
+        :raises RuntimeError: If the server sends an incorrect response.
+        :return: The LoginResponse packet from the server.
+        """
+        request = LoginRequest(self.user_name)
+        message_type, payload = self.send_request(request, MessageType.LOGIN)
+
+        if payload is None:
+            raise RuntimeError("No response received from server")
+
+        if message_type != MessageType.LOGIN_RESPONSE:
+            raise RuntimeError("Recieved incorrect type response from server")
+
+        (encrypted_session_token,) = LoginResponse.decode_packet(payload)
+        logger.debug("Received encrypted token bytes %s", encrypted_session_token)
+
+        if len(encrypted_session_token) == 0:
+            logger.error("You are not registered! Please register before logging in")
+            raise SystemExit
+
+        self.session_token = rsa.decrypt(encrypted_session_token, self.__private_key)
+        logger.debug("Storing provided session token %s", self.session_token)
+        logger.info("Now logged in as %s", self.user_name)
+
+        return payload
+
+    def send_key_request(self, receiver_name: str | None = None) -> bytes:
+        """Send a pubblic key request to the server.
+
+        :param receiver_name: The name of the user who's key should be requested.
+        :return: The KeyResponse packet from the server.
+        """
+        if not receiver_name:
+            receiver_name = input("Who's key are we requesting? ")
+
+        request = KeyRequest(receiver_name)
+        message_type, payload = self.send_request(request, MessageType.KEY)
+
+        if payload is None:
+            raise RuntimeError("No response received from the server")
+
+        if message_type != MessageType.KEY_RESPONSE:
+            logger.error("Recieved incorrect type response from server")
+            raise SystemExit
+
+        (public_key,) = KeyResponse.decode_packet(payload)
+
+        if public_key is None:
+            logger.warning("The requested user is not registered")
+        else:
+            logger.info(
+                "Received %s's key:\n%s",
+                receiver_name,
+                (public_key.n, public_key.e),
+            )
+
+        return payload
+
+    def send_create_request(
+        self,
+        receiver_name: str | None = None,
+        message: str | None = None,
+    ) -> None:
+        """Send a create request to the server.
+
+        :param receiver_name: The name of the person to send the messag to.
+        :param message: The message to be sent.
+        """
+        if self.session_token is None:
+            logger.error("Please log in before sending messages")
+            raise SystemExit
+
+        if receiver_name is None:
+            receiver_name = input("Enter the name of the receiver: ")
+
+        if message is None:
+            message = input("Enter the message to be sent: ")
+
+        logger.debug(
+            'User specified message to %s: "%s"',
+            receiver_name,
+            message,
+        )
+
+        # encrypted_message = rsa.encrypt(message.encode(),
+        # self.key_cache[receiver_name])
+
+        request = CreateRequest(receiver_name, message)
+        self.send_request(request, MessageType.CREATE, expect_response=False)
 
     @staticmethod
     def read_message_response(packet: bytes) -> None:
@@ -131,31 +216,88 @@ class Client(CommandLineApplication):
 
         :param packet: The message response from the server.
         """
-        messages, more_messages = MessageResponse.decode_packet(packet)
+        messages, more_messages = ReadResponse.decode_packet(packet)
 
         for sender, message in messages:
-            logger.info('Received %s\'s message "%s"', sender, message)
-            print(f"Message from {sender}:\n{message}\n")
+            logger.info("\nMessage from %s:\n%s", sender, message)
 
         if len(messages) == 0:
-            logger.info("Response contained no messages")
-            print("No messages available")
+            logger.info("No messages available")
         elif more_messages:
-            logger.info("Server has more messages available for this user")
-            print("More messages available, please send another request")
+            logger.info("More messages available, please send another request")
+
+    def send_read_request(self) -> bytes:
+        """Send a read request to the server.
+
+        :raises RuntimeError: If the server sends an invalid response.
+        :return: The ReadResponse packet received from the server.
+        """
+        if self.session_token is None:
+            logger.error("Please log in to request messages")
+            raise SystemExit
+
+        request = ReadRequest(self.user_name)
+        message_type, payload = self.send_request(request, MessageType.READ)
+
+        if payload is None:
+            raise RuntimeError("No response received from the server")
+
+        if message_type != MessageType.READ_RESPONSE:
+            raise RuntimeError("Incorrect type message recieved from the server.")
+
+        self.read_message_response(payload)
+
+        return payload
 
     def run(self) -> None:
-        """Ask the user to input message and send request to server."""
-        if self.message_type == MessageType.CREATE:
-            self.receiver_name = input("Enter the name of the receiver: ")
-            self.message = input("Enter the message to be sent: ")
-            logger.info(
-                'User specified message to %s: "%s"', self.receiver_name, self.message
-            )
+        """Ask the user to input message and send request to server.
 
-        request = MessageRequest(
-            self.message_type, self.user_name, self.receiver_name, self.message
+        :param receiver_name: The name of the user to send the message to.
+        Will request from ``stdin`` if not present. Defaults to ``None``.
+        :param message: The message to send. Will request from
+        ``stdin`` if not present. Defaults to ``None``.
+        """
+        help_text = (
+            "'register': Register your name and public key with the server.\n"
+            "'login': Get a token from the server for sending and receiving messages\n"
+            "'key': Request a user's public key. Currently not useful.\n"
+            "'create': Send a message to another user.\n"
+            "'read': Get all messages sent to you.\n"
+            "'help': Show this message.\n"
+            "'exit': Quit the application.\n"
         )
-        response = self.send_message_request(request)
-        if self.message_type == MessageType.READ and response:
-            self.read_message_response(response)
+
+        logger.info(help_text)
+
+        while True:
+            user_input = input("Please enter a request type: ")
+
+            if user_input == "exit":
+                return
+
+            if user_input == "help":
+                logger.info(help_text)
+                continue
+
+            try:
+                message_type = MessageType.from_str(user_input)
+            except ValueError:
+                logger.warning("Invalid message type")
+                continue
+
+            if message_type not in SEND_REQUEST_MAPPING:
+                logging.warning("Given message type is not a valid request!")
+                continue
+
+            send_function = SEND_REQUEST_MAPPING[message_type]
+            send_function(self)
+
+
+ClientSendFunction: TypeAlias = Callable[[Client], bytes | None]
+SEND_REQUEST_MAPPING: Final[Mapping[MessageType, ClientSendFunction]] = {
+    MessageType.REGISTER: Client.send_registration_request,
+    MessageType.LOGIN: Client.send_login_request,
+    MessageType.KEY: Client.send_key_request,
+    MessageType.CREATE: Client.send_create_request,
+    MessageType.READ: Client.send_read_request,
+}
