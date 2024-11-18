@@ -34,13 +34,13 @@ class TestMoreMessages(unittest.TestCase):
         server_thread.start()
 
         recipient_client = client.Client(
-            [self.HOST_NAME, self.PORT_NUMBER, self.RECIPIENT_NAME, "read"],
+            [self.HOST_NAME, self.PORT_NUMBER, self.RECIPIENT_NAME],
         )
         recipient_client.send_registration_request()
 
         for sender_name in names:
             sender_client = client.Client(
-                [self.HOST_NAME, self.PORT_NUMBER, sender_name, "create"],
+                [self.HOST_NAME, self.PORT_NUMBER, sender_name],
             )
             sender_client.send_registration_request()
             sender_client.send_login_request()

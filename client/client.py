@@ -35,30 +35,26 @@ class Client(CommandLineApplication):
         """Initialise the client with specified arguments.
 
         :param arguments: A list containing the host name, port number,
-        username, and message type.
+        and username.
         """
         super().__init__(
             OrderedDict(
                 host_name=parse_hostname,
                 port_number=PortNumber,
                 user_name=parse_username,
-                message_type=MessageType.from_str,
             ),
         )
 
-        parsed_arguments: tuple[str, PortNumber, str, MessageType]
+        parsed_arguments: tuple[str, PortNumber, str]
         parsed_arguments = self.parse_arguments(arguments)
 
-        self.host_name, self.port_number, self.user_name, self.message_type = (
-            parsed_arguments
-        )
+        self.host_name, self.port_number, self.user_name = parsed_arguments
 
         logger.debug(
-            "Client for %s port %s created by %s to send %s request",
+            "Client for %s port %s created by %s",
             self.host_name,
             self.port_number,
             self.user_name,
-            self.message_type.name.lower(),
         )
 
         self.public_key, self.__private_key = rsa.newkeys(512)
@@ -111,7 +107,7 @@ class Client(CommandLineApplication):
 
         logger.info(
             "%s record sent as %s",
-            self.message_type.name.capitalize(),
+            message_type.name.capitalize(),
             self.user_name,
         )
 
@@ -261,12 +257,40 @@ class Client(CommandLineApplication):
         :param message: The message to send. Will request from
         ``stdin`` if not present. Defaults to ``None``.
         """
-        if self.message_type not in SEND_REQUEST_MAPPING:
-            logging.error("Given message type is not a valid request!")
-            return
+        help_text = (
+            "'register': Register your name and public key with the server.\n"
+            "'login': Get a token from the server for sending and receiving messages\n"
+            "'key': Request a user's public key. Currently not useful.\n"
+            "'create': Send a message to another user.\n"
+            "'read': Get all messages sent to you.\n"
+            "'help': Show this message.\n"
+            "'exit': Quit the application.\n"
+        )
 
-        send_function = SEND_REQUEST_MAPPING[self.message_type]
-        send_function(self)
+        logger.info(help_text)
+
+        while True:
+            user_input = input("Please enter a request type: ")
+
+            if user_input == "exit":
+                return
+
+            if user_input == "help":
+                logger.info(help_text)
+                continue
+
+            try:
+                message_type = MessageType.from_str(user_input)
+            except ValueError:
+                logger.warning("Invalid message type")
+                continue
+
+            if message_type not in SEND_REQUEST_MAPPING:
+                logging.warning("Given message type is not a valid request!")
+                continue
+
+            send_function = SEND_REQUEST_MAPPING[message_type]
+            send_function(self)
 
 
 ClientSendFunction: TypeAlias = Callable[[Client], bytes | None]

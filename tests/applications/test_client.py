@@ -20,7 +20,7 @@ class TestClient(unittest.TestCase):
 
     def test_construction(self) -> None:
         """Tests that a Client object can be constructed given correct arguments."""
-        Client([TestClient.hostname, str(TestClient.port_number), "Alice", "create"])
+        Client([TestClient.hostname, str(TestClient.port_number), "Alice"])
 
     def test_construction_raise_error(self) -> None:
         """Tests that a Client object cannot be constructed given invalid arguments."""
@@ -33,7 +33,7 @@ class TestClient(unittest.TestCase):
     def test_send_create_request(self) -> None:
         """Tests that a Client object can send a create request."""
         client = Client(
-            [TestClient.hostname, str(TestClient.port_number), "Alice", "create"],
+            [TestClient.hostname, str(TestClient.port_number), "Alice"],
         )
         receiver_name = "John"
         message = "Hello John"
@@ -46,11 +46,7 @@ class TestClient(unittest.TestCase):
             client.session_token = DUMMY_SESSION_TOKEN
 
             # Send message request from the client
-            client.send_request(
-                CreateRequest(receiver_name, message),
-                MessageType.CREATE,
-                expect_response=False,
-            )
+            client.send_create_request(receiver_name, message)
 
             # Accept connection from the client
             connection_socket, _ = welcoming_socket.accept()
