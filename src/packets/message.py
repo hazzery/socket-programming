@@ -2,12 +2,10 @@
 
 import struct
 
-from src.message_type import MessageType
-
 from .packet import Packet
 
 
-class Message(Packet, struct_format="!BH", message_type=MessageType.MESSAGE):
+class Message(Packet, struct_format="!BH"):
     """A class for encoding and decoding message packets.
 
     Message "packets" are the encoding of a single message from within

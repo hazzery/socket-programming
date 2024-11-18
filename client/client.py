@@ -19,6 +19,8 @@ from src.packets.packet import Packet
 from src.packets.read_request import ReadRequest
 from src.packets.read_response import ReadResponse
 from src.packets.registration_request import RegistrationRequest
+from src.packets.session_wrapper import SessionWrapper
+from src.packets.type_wrapper import TypeWrapper
 from src.parse_hostname import parse_hostname
 from src.parse_username import parse_username
 from src.port_number import PortNumber
@@ -70,21 +72,33 @@ class Client(CommandLineApplication):
         self.session_token: bytes | None = None
         self.key_cache: dict[str, rsa.PublicKey] = {}
 
-    def send_request(self, request: Packet, *, expect_response: bool = True) -> bytes:
+    def send_request(
+        self,
+        request: Packet,
+        message_type: MessageType,
+        *,
+        expect_response: bool = True,
+    ) -> tuple[MessageType, bytes] | tuple[None, None]:
         """Send a message request record to the server.
 
         :param request: The message request to be sent.
         :return: The server's response if applicable, otherwise ``None``.
         """
-        response = b""
-        packet = request.to_bytes()
+        response: tuple[MessageType, bytes] | tuple[None, None] = None, None
+
+        packet = TypeWrapper(
+            message_type,
+            SessionWrapper(self.session_token, request),
+        ).to_bytes()
+
         try:
             with socket.socket() as connection_socket:
                 connection_socket.settimeout(1)
                 connection_socket.connect((self.host_name, self.port_number))
                 connection_socket.send(packet)
                 if expect_response:
-                    response = connection_socket.recv(4096)
+                    response_packet = connection_socket.recv(4096)
+                    response = TypeWrapper.decode_packet(response_packet)
 
         except (ConnectionRefusedError, TimeoutError) as error:
             message = (
@@ -106,7 +120,7 @@ class Client(CommandLineApplication):
     def send_registration_request(self) -> None:
         """Send a registration request to the server."""
         request = RegistrationRequest(self.user_name, self.public_key)
-        self.send_request(request, expect_response=False)
+        self.send_request(request, MessageType.REGISTER, expect_response=False)
 
     def send_login_request(self) -> bytes:
         """Send a login request to the server.
@@ -115,15 +129,15 @@ class Client(CommandLineApplication):
         :return: The LoginResponse packet from the server.
         """
         request = LoginRequest(self.user_name)
-        response = self.send_request(request)
+        message_type, payload = self.send_request(request, MessageType.LOGIN)
 
-        message_type: MessageType
-        packet: bytes
-        message_type, _, packet = Packet.decode_packet(response)
+        if payload is None:
+            raise RuntimeError("No response received from server")
+
         if message_type != MessageType.LOGIN_RESPONSE:
             raise RuntimeError("Recieved incorrect type response from server")
 
-        (encrypted_session_token,) = LoginResponse.decode_packet(packet)
+        (encrypted_session_token,) = LoginResponse.decode_packet(payload)
         logger.debug("Received encrypted token bytes %s", encrypted_session_token)
 
         if len(encrypted_session_token) == 0:
@@ -134,7 +148,7 @@ class Client(CommandLineApplication):
         logger.debug("Storing provided session token %s", self.session_token)
         logger.info("Now logged in as %s", self.user_name)
 
-        return packet
+        return payload
 
     def send_key_request(self, receiver_name: str | None = None) -> bytes:
         """Send a pubblic key request to the server.
@@ -146,17 +160,16 @@ class Client(CommandLineApplication):
             receiver_name = input("Who's key are we requesting? ")
 
         request = KeyRequest(receiver_name)
-        response = self.send_request(request)
+        message_type, payload = self.send_request(request, MessageType.KEY)
 
-        message_type: MessageType
-        packet: bytes
-        message_type, _, packet = Packet.decode_packet(response)
+        if payload is None:
+            raise RuntimeError("No response received from the server")
 
         if message_type != MessageType.KEY_RESPONSE:
             logger.error("Recieved incorrect type response from server")
             raise SystemExit
 
-        (public_key,) = KeyResponse.decode_packet(packet)
+        (public_key,) = KeyResponse.decode_packet(payload)
 
         if public_key is None:
             logger.warning("The requested user is not registered")
@@ -167,7 +180,7 @@ class Client(CommandLineApplication):
                 (public_key.n, public_key.e),
             )
 
-        return packet
+        return payload
 
     def send_create_request(
         self,
@@ -198,12 +211,8 @@ class Client(CommandLineApplication):
         # encrypted_message = rsa.encrypt(message.encode(),
         # self.key_cache[receiver_name])
 
-        request = CreateRequest(
-            self.session_token,
-            receiver_name,
-            message,
-        )
-        self.send_request(request, expect_response=False)
+        request = CreateRequest(receiver_name, message)
+        self.send_request(request, MessageType.CREATE, expect_response=False)
 
     @staticmethod
     def read_message_response(packet: bytes) -> None:
@@ -231,18 +240,18 @@ class Client(CommandLineApplication):
             logger.error("Please log in to request messages")
             raise SystemExit
 
-        request = ReadRequest(self.session_token, self.user_name)
-        response = self.send_request(request)
+        request = ReadRequest(self.user_name)
+        message_type, payload = self.send_request(request, MessageType.READ)
 
-        message_type: MessageType
-        packet: bytes
-        message_type, _, packet = Packet.decode_packet(response)
+        if payload is None:
+            raise RuntimeError("No response received from the server")
 
         if message_type != MessageType.READ_RESPONSE:
             raise RuntimeError("Incorrect type message recieved from the server.")
 
-        self.read_message_response(packet)
-        return packet
+        self.read_message_response(payload)
+
+        return payload
 
     def run(self) -> None:
         """Ask the user to input message and send request to server.

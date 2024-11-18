@@ -7,25 +7,21 @@ import logging
 import struct
 from typing import Any
 
-from src.message_type import MessageType
 from src.packets.packet import Packet
 
 
-class LoginRequest(Packet, struct_format="!B", message_type=MessageType.LOGIN):
+class LoginRequest(Packet, struct_format="!B"):
     """The LoginRequest class is used to encode and decode login request packets."""
 
     def __init__(self, user_name: str) -> None:
         """Create a login request packet."""
-        super().__init__()
         self.user_name = user_name
 
     def to_bytes(self) -> bytes:
         """Encode the login request packet into a byte array."""
         logging.debug("Creating log-in request as %s", self.user_name)
 
-        packet = super().to_bytes()
-
-        packet += struct.pack(
+        packet = struct.pack(
             self.struct_format,
             len(self.user_name.encode()),
         )

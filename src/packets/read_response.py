@@ -3,14 +3,13 @@
 import logging
 import struct
 
-from src.message_type import MessageType
 from src.packets.message import Message
 from src.packets.packet import Packet
 
 logger = logging.getLogger(__name__)
 
 
-class ReadResponse(Packet, struct_format="!B?", message_type=MessageType.READ_RESPONSE):
+class ReadResponse(Packet, struct_format="!B?"):
     """Enables encoding and decoding message response packets."""
 
     MAX_MESSAGE_LENGTH = 255
@@ -20,7 +19,6 @@ class ReadResponse(Packet, struct_format="!B?", message_type=MessageType.READ_RE
 
         :param messages: A list of all the messages to be put in the structure.
         """
-        super().__init__()
         self.num_messages = min(len(messages), ReadResponse.MAX_MESSAGE_LENGTH)
         self.more_messages = len(messages) > ReadResponse.MAX_MESSAGE_LENGTH
 
@@ -33,9 +31,7 @@ class ReadResponse(Packet, struct_format="!B?", message_type=MessageType.READ_RE
         """
         logger.debug("Creating message response for %s message(s)", self.num_messages)
 
-        packet = super().to_bytes()
-
-        packet += struct.pack(
+        packet = struct.pack(
             self.struct_format,
             self.num_messages,
             self.more_messages,

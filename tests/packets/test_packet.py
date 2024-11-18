@@ -3,7 +3,6 @@
 import unittest
 from typing import Any
 
-from src.message_type import MessageType
 from src.packets.packet import Packet
 
 
@@ -21,7 +20,6 @@ class TestPacket(unittest.TestCase):
             class NoStructFormat(
                 Packet,
                 struct_format="invalid format",
-                message_type=MessageType.LOGIN,
             ):
                 """Invalid ``struct_format`` passed, so class will not be created."""
 

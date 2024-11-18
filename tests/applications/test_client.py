@@ -6,7 +6,8 @@ import unittest
 from client import Client
 from src.message_type import MessageType
 from src.packets.create_request import CreateRequest
-from src.packets.packet import Packet
+from src.packets.session_wrapper import SessionWrapper
+from src.packets.type_wrapper import TypeWrapper
 
 DUMMY_SESSION_TOKEN = b"01234567890123456789012345678901"
 
@@ -29,8 +30,8 @@ class TestClient(unittest.TestCase):
             ["invalid", str(TestClient.port_number), "Alice", "create"],
         )
 
-    def test_send_message_request(self) -> None:
-        """Tests that a Client object can send a message request."""
+    def test_send_create_request(self) -> None:
+        """Tests that a Client object can send a create request."""
         client = Client(
             [TestClient.hostname, str(TestClient.port_number), "Alice", "create"],
         )
@@ -42,9 +43,12 @@ class TestClient(unittest.TestCase):
             welcoming_socket.bind((TestClient.hostname, TestClient.port_number))
             welcoming_socket.listen(1)
 
+            client.session_token = DUMMY_SESSION_TOKEN
+
             # Send message request from the client
             client.send_request(
-                CreateRequest(DUMMY_SESSION_TOKEN, receiver_name, message),
+                CreateRequest(receiver_name, message),
+                MessageType.CREATE,
                 expect_response=False,
             )
 
@@ -56,7 +60,8 @@ class TestClient(unittest.TestCase):
             with connection_socket:
                 packet = connection_socket.recv(4096)
 
-        message_type, session_token, packet = Packet.decode_packet(packet)
+        message_type, packet = TypeWrapper.decode_packet(packet)
+        session_token, packet = SessionWrapper.decode_packet(packet)
 
         self.assertEqual(MessageType.CREATE, message_type)
         self.assertEqual(DUMMY_SESSION_TOKEN, session_token)

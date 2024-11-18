@@ -3,14 +3,12 @@
 import logging
 import struct
 
-from src.message_type import MessageType
-
-from .packet import Packet
+from src.packets.packet import Packet
 
 logger = logging.getLogger(__name__)
 
 
-class CreateRequest(Packet, struct_format="!BH", message_type=MessageType.CREATE):
+class CreateRequest(Packet, struct_format="!BH"):
     """Encoding and decoding of create request packets.
 
     Usage:
@@ -22,7 +20,6 @@ class CreateRequest(Packet, struct_format="!BH", message_type=MessageType.CREATE
 
     def __init__(
         self,
-        session_token: bytes,
         receiver_name: str,
         message: str,
     ) -> None:
@@ -32,7 +29,6 @@ class CreateRequest(Packet, struct_format="!BH", message_type=MessageType.CREATE
         :param receiver_name: The name of the message recipient.
         :param message: The string message to be sent.
         """
-        super().__init__(session_token=session_token)
         self.receiver_name = receiver_name
         self.message = message
 
@@ -47,9 +43,7 @@ class CreateRequest(Packet, struct_format="!BH", message_type=MessageType.CREATE
             self.message,
         )
 
-        packet = super().to_bytes()
-
-        packet += struct.pack(
+        packet = struct.pack(
             self.struct_format,
             len(self.receiver_name.encode()),
             len(self.message.encode()),

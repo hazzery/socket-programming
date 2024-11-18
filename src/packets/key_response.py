@@ -9,31 +9,22 @@ import struct
 
 import rsa
 
-from src.message_type import MessageType
 from src.packets.packet import Packet
 
 
-class KeyResponse(
-    Packet,
-    struct_format="!HH",
-    message_type=MessageType.KEY_RESPONSE,
-):
+class KeyResponse(Packet, struct_format="!HH"):
     """Encode and decode public key response packets."""
 
     def __init__(self, public_key: rsa.PublicKey | None) -> None:
         """Create a key response packet."""
-        super().__init__()
         self.public_key = public_key
 
     def to_bytes(self) -> bytes:
         """Encode the key response packet into a byte array."""
         logging.info("Creating key response")
 
-        packet = super().to_bytes()
-
         if self.public_key is None:
-            packet += struct.pack(self.struct_format, 0, 0)
-            return packet
+            return struct.pack(self.struct_format, 0, 0)
 
         product = self.public_key.n.to_bytes(
             (self.public_key.n.bit_length() + 7) // 8,
@@ -43,7 +34,7 @@ class KeyResponse(
             (self.public_key.e.bit_length() + 7) // 8,
         )
 
-        packet += struct.pack(
+        packet = struct.pack(
             self.struct_format,
             len(product),
             len(exponent),

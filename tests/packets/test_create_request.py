@@ -5,9 +5,7 @@ import unittest
 
 from src.message_type import MessageType
 from src.packets.create_request import CreateRequest
-from src.packets.packet import Packet
 
-DUMMY_SESSION_TOKEN = b"01234567890123456789012345678901"
 CREATE_PACKET_HEADER_SIZE = struct.calcsize(CreateRequest.struct_format)
 
 
@@ -19,15 +17,12 @@ class TestCreateRequestEncoding(unittest.TestCase):
         receiver_name = "Jake"
         message = "Hello, World!"
         packet = CreateRequest(
-            DUMMY_SESSION_TOKEN,
             receiver_name,
             message,
         ).to_bytes()
 
-        _, _, payload = Packet.decode_packet(packet)
-
         expected = len(receiver_name.encode())
-        actual = payload[0]
+        actual = packet[0]
         self.assertEqual(expected, actual)
 
     def test_message_length_encoding(self) -> None:
@@ -35,15 +30,12 @@ class TestCreateRequestEncoding(unittest.TestCase):
         receiver_name = "Jay"
         message = "Hello, World!"
         packet = CreateRequest(
-            DUMMY_SESSION_TOKEN,
             receiver_name,
             message,
         ).to_bytes()
 
-        _, _, payload = Packet.decode_packet(packet)
-
         expected = len(message.encode())
-        actual = (payload[1] << 8) | (payload[2] & 0xFF)
+        actual = (packet[1] << 8) | (packet[2] & 0xFF)
         self.assertEqual(expected, actual)
 
     def test_receiver_name_encoding(self) -> None:
@@ -51,15 +43,12 @@ class TestCreateRequestEncoding(unittest.TestCase):
         receiver_name = "Jesse"
         message = "Hello, World!"
         packet = CreateRequest(
-            DUMMY_SESSION_TOKEN,
             receiver_name,
             message,
         ).to_bytes()
 
-        _, _, payload = Packet.decode_packet(packet)
-
         expected = receiver_name
-        actual = payload[
+        actual = packet[
             CREATE_PACKET_HEADER_SIZE : CREATE_PACKET_HEADER_SIZE
             + len(receiver_name.encode())
         ].decode()
@@ -70,17 +59,14 @@ class TestCreateRequestEncoding(unittest.TestCase):
         receiver_name = "Jimmy"
         message = "Hello, World!"
         packet = CreateRequest(
-            DUMMY_SESSION_TOKEN,
             receiver_name,
             message,
         ).to_bytes()
 
-        _, _, payload = Packet.decode_packet(packet)
-
         start_index = CREATE_PACKET_HEADER_SIZE + len(receiver_name.encode())
 
         expected = message
-        actual = payload[start_index : start_index + len(message.encode())].decode()
+        actual = packet[start_index : start_index + len(message.encode())].decode()
         self.assertEqual(expected, actual)
 
 
@@ -94,12 +80,10 @@ class TestCreateRequestDecoding(unittest.TestCase):
         self.receiver_name = "Jonty"
         self.message = "Hello, World!"
 
-        packet = CreateRequest(
-            DUMMY_SESSION_TOKEN,
+        self.packet = CreateRequest(
             self.receiver_name,
             self.message,
         ).to_bytes()
-        _, _, self.packet = Packet.decode_packet(packet)
 
     def test_receiver_name_decoding(self) -> None:
         """Tests that the receiver's name is decoded correctly."""

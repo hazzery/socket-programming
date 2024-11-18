@@ -19,6 +19,8 @@ from src.packets.login_response import LoginResponse
 from src.packets.packet import Packet
 from src.packets.read_response import ReadResponse
 from src.packets.registration_request import RegistrationRequest
+from src.packets.session_wrapper import SessionWrapper
+from src.packets.type_wrapper import TypeWrapper
 from src.port_number import PortNumber
 
 logger = logging.getLogger(__name__)
@@ -81,7 +83,7 @@ class Server(CommandLineApplication):
         self,
         requestor_username: str | None,
         _packet: bytes,
-    ) -> bytes:
+    ) -> ReadResponse:
         """Respond to read requests.
 
         :param packet: The read request packet to process.
@@ -91,7 +93,7 @@ class Server(CommandLineApplication):
             logger.info(
                 "Received unauthenticated read request, responding without messages",
             )
-            return ReadResponse([]).to_bytes()
+            return ReadResponse([])
 
         messages = self.messages.get(requestor_username, []).copy()
         response = ReadResponse(messages)
@@ -103,7 +105,7 @@ class Server(CommandLineApplication):
             requestor_username,
         )
 
-        return response.to_bytes()
+        return response
 
     def process_create_request(
         self,
@@ -136,7 +138,7 @@ class Server(CommandLineApplication):
         self,
         _requestor_username: str | None,
         packet: bytes,
-    ) -> bytes:
+    ) -> LoginResponse:
         """Process a client requset to login.
 
         :param packet: A byte array containing the login request.
@@ -145,7 +147,7 @@ class Server(CommandLineApplication):
 
         if sender_name not in self.users:
             logger.info("Unregistered user %s attempted to login", sender_name)
-            return LoginResponse(b"").to_bytes()
+            return LoginResponse(b"")
 
         session_token = self.generate_session_token()
         self.sessions[session_token] = sender_name
@@ -155,7 +157,7 @@ class Server(CommandLineApplication):
         encrypted_session_token = rsa.encrypt(session_token, senders_public_key)
         logger.debug("Encrypted token to %s", encrypted_session_token)
 
-        return LoginResponse(encrypted_session_token).to_bytes()
+        return LoginResponse(encrypted_session_token)
 
     def process_registration_request(
         self,
@@ -184,7 +186,7 @@ class Server(CommandLineApplication):
         self,
         _requestor_username: str | None,
         packet: bytes,
-    ) -> bytes:
+    ) -> KeyResponse:
         """Process a client request for a user's public key.
 
         :param packet: A byte array containing the key request.
@@ -194,21 +196,23 @@ class Server(CommandLineApplication):
         logger.info("Received request for %s's key", requested_user)
 
         if requested_user not in self.users:
-            return KeyResponse(None).to_bytes()
+            return KeyResponse(None)
 
         public_key = self.users[requested_user]
-        return KeyResponse(public_key).to_bytes()
+        return KeyResponse(public_key)
 
-    def process_request(self, packet: bytes, connection_socket: socket.socket) -> None:
+    def process_request(
+        self,
+        packet: bytes,
+        connection_socket: socket.socket,
+    ) -> None:
         """Process an incoming client request.
 
         :param packet: The packet received from a client.
         :param connection_socket: The socket to use for responding to read requests.
         """
-        message_type: MessageType
-        session_token: bytes | None
-
-        message_type, session_token, packet = Packet.decode_packet(packet)
+        message_type, packet = TypeWrapper.decode_packet(packet)
+        session_token, packet = SessionWrapper.decode_packet(packet)
 
         if session_token is not None:
             requestor_username = self.sessions.get(session_token, None)
@@ -223,7 +227,9 @@ class Server(CommandLineApplication):
         response = processor_function(self, requestor_username, packet)
 
         if response is not None:
-            connection_socket.send(response)
+            response_type = REQUEST_RESPONSE_MAPPING[message_type]
+            packet = TypeWrapper(response_type, response).to_bytes()
+            connection_socket.send(packet)
 
     def run_server(self, welcoming_socket: socket.socket) -> None:
         """Run the server side of the program.
@@ -243,8 +249,8 @@ class Server(CommandLineApplication):
 
         try:
             with connection_socket:
-                record = connection_socket.recv(4096)
-                self.process_request(record, connection_socket)
+                packet = connection_socket.recv(4096)
+                self.process_request(packet, connection_socket)
 
         except TimeoutError:
             error_message = "Timed out while waiting for message request"
@@ -259,11 +265,17 @@ class Server(CommandLineApplication):
         self.running = False
 
 
-ServerProcessFunction: TypeAlias = Callable[[Server, str | None, bytes], bytes | None]
+ServerProcessFunction: TypeAlias = Callable[[Server, str | None, bytes], Packet | None]
 PROCESS_REQUEST_MAPPING: Final[Mapping[MessageType, ServerProcessFunction]] = {
     MessageType.REGISTER: Server.process_registration_request,
     MessageType.LOGIN: Server.process_login_request,
     MessageType.KEY: Server.process_key_request,
     MessageType.CREATE: Server.process_create_request,
     MessageType.READ: Server.process_read_request,
+}
+
+REQUEST_RESPONSE_MAPPING: Final[Mapping[MessageType, MessageType]] = {
+    MessageType.LOGIN: MessageType.LOGIN_RESPONSE,
+    MessageType.KEY: MessageType.KEY_RESPONSE,
+    MessageType.READ: MessageType.READ_RESPONSE,
 }

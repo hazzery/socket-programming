@@ -9,20 +9,14 @@ import struct
 
 import rsa
 
-from src.message_type import MessageType
 from src.packets.packet import Packet
 
 
-class RegistrationRequest(
-    Packet,
-    struct_format="!BHH",
-    message_type=MessageType.REGISTER,
-):
+class RegistrationRequest(Packet, struct_format="!BHH"):
     """Encode and decode registration request packets."""
 
     def __init__(self, user_name: str, public_key: rsa.PublicKey) -> None:
         """Create a login request packet."""
-        super().__init__()
         self.user_name = user_name
         self.public_key = public_key
 
@@ -40,9 +34,7 @@ class RegistrationRequest(
             (self.public_key.e.bit_length() + 7) // 8,
         )
 
-        packet = super().to_bytes()
-
-        packet += struct.pack(
+        packet = struct.pack(
             self.struct_format,
             len(user_name),
             len(product),

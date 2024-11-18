@@ -7,29 +7,21 @@ public key request packets.
 import logging
 import struct
 
-from src.message_type import MessageType
 from src.packets.packet import Packet
 
 
-class KeyRequest(
-    Packet,
-    struct_format="!H",
-    message_type=MessageType.KEY,
-):
+class KeyRequest(Packet, struct_format="!H"):
     """Encode and decode public key request packets."""
 
     def __init__(self, user_name: str) -> None:
         """Create a key request packet."""
-        super().__init__()
         self.user_name = user_name
 
     def to_bytes(self) -> bytes:
         """Encode the key request packet into a byte array."""
         logging.debug("Creating key request for %s", self.user_name)
 
-        packet = super().to_bytes()
-
-        packet += struct.pack(
+        packet = struct.pack(
             self.struct_format,
             len(self.user_name.encode()),
         )
