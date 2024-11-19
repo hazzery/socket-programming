@@ -170,11 +170,8 @@ class Client(CommandLineApplication):
         if public_key is None:
             logger.warning("The requested user is not registered")
         else:
-            logger.info(
-                "Received %s's key:\n%s",
-                receiver_name,
-                (public_key.n, public_key.e),
-            )
+            self.key_cache[receiver_name] = public_key
+            logger.info("Received %s's key:", receiver_name)
 
         return payload
 
@@ -190,10 +187,14 @@ class Client(CommandLineApplication):
         """
         if self.session_token is None:
             logger.error("Please log in before sending messages")
-            raise SystemExit
+            return
 
         if receiver_name is None:
             receiver_name = input("Enter the name of the receiver: ")
+
+        if receiver_name not in self.key_cache:
+            logger.error("Perform key request for user before sending message.")
+            return
 
         if message is None:
             message = input("Enter the message to be sent: ")
@@ -204,29 +205,32 @@ class Client(CommandLineApplication):
             message,
         )
 
-        # encrypted_message = rsa.encrypt(message.encode(),
-        # self.key_cache[receiver_name])
+        encrypted_message = rsa.encrypt(message.encode(), self.key_cache[receiver_name])
 
-        request = CreateRequest(receiver_name, message)
+        request = CreateRequest(receiver_name, encrypted_message)
         self.send_request(request, MessageType.CREATE, expect_response=False)
 
-    @staticmethod
-    def read_message_response(packet: bytes) -> None:
+    def read_message_response(self, packet: bytes) -> None:
         """Read a message response from the server.
 
         :param packet: The message response from the server.
         """
         messages, more_messages = ReadResponse.decode_packet(packet)
 
-        for sender, message in messages:
-            logger.info("\nMessage from %s:\n%s", sender, message)
+        for sender, encrypted_message in messages:
+            message_bytes = rsa.decrypt(encrypted_message, self.__private_key)
+            logger.info(
+                "\nMessage from %s:\n%s",
+                sender,
+                message_bytes.decode(),
+            )
 
         if len(messages) == 0:
             logger.info("No messages available")
         elif more_messages:
             logger.info("More messages available, please send another request")
 
-    def send_read_request(self) -> bytes:
+    def send_read_request(self) -> bytes | None:
         """Send a read request to the server.
 
         :raises RuntimeError: If the server sends an invalid response.
@@ -234,7 +238,7 @@ class Client(CommandLineApplication):
         """
         if self.session_token is None:
             logger.error("Please log in to request messages")
-            raise SystemExit
+            return None
 
         request = ReadRequest(self.user_name)
         message_type, payload = self.send_request(request, MessageType.READ)

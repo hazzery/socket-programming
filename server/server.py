@@ -121,17 +121,16 @@ class Server(CommandLineApplication):
             logger.info("Received unauthenticated create request, ignoreing")
             return
 
-        receiver_name, message = CreateRequest.decode_packet(packet)
+        recipient_name, message = CreateRequest.decode_packet(packet)
 
-        if receiver_name not in self.messages:
-            self.messages[receiver_name] = []
+        if recipient_name not in self.messages:
+            self.messages[recipient_name] = []
 
-        self.messages[receiver_name].append((requestor_username, message))
+        self.messages[recipient_name].append((requestor_username, message))
         logger.info(
-            'Storing %s\'s message to %s: "%s"',
+            "Storing %s's message to %s",
             requestor_username,
-            receiver_name,
-            message.decode(),
+            recipient_name,
         )
 
     def process_login_request(

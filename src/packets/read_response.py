@@ -39,12 +39,12 @@ class ReadResponse(Packet, struct_format="!B?"):
 
         for sender, message in self.messages:
             packet += Message(sender, message).to_bytes()
-            logger.info('Encoded message from %s: "%s"', sender, message.decode())
+            logger.info("Encoded message from %s", sender)
 
         return packet
 
     @classmethod
-    def decode_packet(cls, packet: bytes) -> tuple[list[tuple[str, str]], bool]:
+    def decode_packet(cls, packet: bytes) -> tuple[list[tuple[str, bytes]], bool]:
         """Decode a read response packet into its individual components.
 
         :param packet: The packet to be decoded.
@@ -54,13 +54,13 @@ class ReadResponse(Packet, struct_format="!B?"):
         header_fields, payload = cls.split_packet(packet)
         num_messages, more_messages = header_fields
 
-        messages: list[tuple[str, str]] = []
+        messages: list[tuple[str, bytes]] = []
         remaining_messages = payload
         for _ in range(num_messages):
-            sender_name, message, remaining_messages = Message.decode_packet(
+            sender_name, encrypted_message, remaining_messages = Message.decode_packet(
                 remaining_messages,
             )
-            logger.debug('Decoded message from %s: "%s"', sender_name, message)
-            messages.append((sender_name, message))
+            logger.debug("Decoded message from %s", sender_name)
+            messages.append((sender_name, encrypted_message))
 
         return messages, more_messages

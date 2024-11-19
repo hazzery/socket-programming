@@ -37,7 +37,7 @@ class Message(Packet, struct_format="!BH"):
         return packet
 
     @classmethod
-    def decode_packet(cls, packet: bytes) -> tuple[str, str, bytes]:
+    def decode_packet(cls, packet: bytes) -> tuple[str, bytes, bytes]:
         """Decode a message packet into it's sender name and message.
 
         :param packet: A ``bytes`` object containing the message to be decoded.
@@ -50,9 +50,9 @@ class Message(Packet, struct_format="!BH"):
         sender_name = payload[:sender_name_length].decode()
         index = sender_name_length
 
-        message = payload[index : index + message_length].decode()
+        encrypted_message = payload[index : index + message_length]
         index += message_length
 
         remaining_messages = payload[index:]
 
-        return sender_name, message, remaining_messages
+        return sender_name, encrypted_message, remaining_messages
