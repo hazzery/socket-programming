@@ -132,14 +132,14 @@ class TestServer(unittest.TestCase):
 
         sender_name = "Alice"
         receiver_name = "John"
-        message = "Hello John"
+        message = b"Hello John"
 
         packet = CreateRequest(receiver_name, message).to_bytes()
 
         server.process_create_request(sender_name, packet)
 
         self.assertEqual(
-            [(sender_name, message.encode())],
+            [(sender_name, message)],
             server.messages[receiver_name],
         )
 
@@ -148,7 +148,7 @@ class TestServer(unittest.TestCase):
         server = Server([str(TestServer.port_number)])
 
         receiver_name = "John"
-        message = "Hello John"
+        message = b"Hello John"
 
         packet = CreateRequest(receiver_name, message).to_bytes()
 
@@ -172,7 +172,7 @@ class TestServer(unittest.TestCase):
 
         messages, more_messages = ReadResponse.decode_packet(response_packet)
 
-        self.assertEqual([(sender_name, message.decode())], messages)
+        self.assertEqual([(sender_name, message)], messages)
         self.assertEqual(False, more_messages)
 
     def test_process_read_request_unauthorised(self) -> None:
