@@ -27,6 +27,10 @@ from src.port_number import PortNumber
 
 logger = logging.getLogger(__name__)
 
+# Buffer size chosen as per note in docs:
+# https://docs.python.org/3/library/socket.html#socket.socket.recv
+RECEIVE_BUFFER_SIZE = 4096
+
 
 class Client(CommandLineApplication):
     """Send and receives messages to and from the server."""
@@ -93,7 +97,13 @@ class Client(CommandLineApplication):
                 connection_socket.connect((self.host_name, self.port_number))
                 connection_socket.send(packet)
                 if expect_response:
-                    response_packet = connection_socket.recv(4096)
+                    response_packet = b""
+                    done = False
+                    while not done:
+                        received_bytes = connection_socket.recv(RECEIVE_BUFFER_SIZE)
+                        response_packet += received_bytes
+                        done = len(received_bytes) < RECEIVE_BUFFER_SIZE
+
                     response = TypeWrapper.decode_packet(response_packet)
 
         except (ConnectionRefusedError, TimeoutError) as error:
