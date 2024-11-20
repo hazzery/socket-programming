@@ -41,12 +41,8 @@ class TestMessageResponseDecoding(unittest.TestCase):
         ]
         packet = ReadResponse(messages).to_bytes()
 
-        expected = [
-            ("Harry", "Hello John!"),
-            ("John", "Hello Harry!"),
-        ]
         actual = ReadResponse.decode_packet(packet)[0]
-        self.assertEqual(expected, actual)
+        self.assertEqual(messages, actual)
 
     def test_more_messages_decoding_false(self) -> None:
         """Tests that the more messages flag is decoded correctly."""

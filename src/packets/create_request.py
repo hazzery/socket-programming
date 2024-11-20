@@ -21,7 +21,7 @@ class CreateRequest(Packet, struct_format="!BH"):
     def __init__(
         self,
         receiver_name: str,
-        message: str,
+        encrypted_message: bytes,
     ) -> None:
         """Encode a create request packet.
 
@@ -30,7 +30,7 @@ class CreateRequest(Packet, struct_format="!BH"):
         :param message: The string message to be sent.
         """
         self.receiver_name = receiver_name
-        self.message = message
+        self.encrypted_message = encrypted_message
 
     def to_bytes(self) -> bytes:
         """Return the create request packet.
@@ -38,19 +38,18 @@ class CreateRequest(Packet, struct_format="!BH"):
         :return: A byte array holding the create request.
         """
         logger.debug(
-            'Creating create request to send %s the message "%s"',
+            "Create create request addressed to %s",
             self.receiver_name,
-            self.message,
         )
 
         packet = struct.pack(
             self.struct_format,
             len(self.receiver_name.encode()),
-            len(self.message.encode()),
+            len(self.encrypted_message),
         )
 
         packet += self.receiver_name.encode()
-        packet += self.message.encode()
+        packet += self.encrypted_message
 
         return packet
 
@@ -81,6 +80,6 @@ class CreateRequest(Packet, struct_format="!BH"):
         receiver_name = payload[:receiver_name_size].decode()
         index = receiver_name_size
 
-        message = payload[index : index + message_size]
+        encrypted_message = payload[index : index + message_size]
 
-        return receiver_name, message
+        return receiver_name, encrypted_message

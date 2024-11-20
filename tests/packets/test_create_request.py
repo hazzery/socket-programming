@@ -15,7 +15,7 @@ class TestCreateRequestEncoding(unittest.TestCase):
     def test_receiver_name_length_encoding(self) -> None:
         """Tests that the length of the receiver's name is encoded correctly."""
         receiver_name = "Jake"
-        message = "Hello, World!"
+        message = b"Hello, World!"
         packet = CreateRequest(
             receiver_name,
             message,
@@ -28,20 +28,20 @@ class TestCreateRequestEncoding(unittest.TestCase):
     def test_message_length_encoding(self) -> None:
         """Tests that the length of the message is encoded correctly."""
         receiver_name = "Jay"
-        message = "Hello, World!"
+        message = b"Hello, World!"
         packet = CreateRequest(
             receiver_name,
             message,
         ).to_bytes()
 
-        expected = len(message.encode())
+        expected = len(message)
         actual = (packet[1] << 8) | (packet[2] & 0xFF)
         self.assertEqual(expected, actual)
 
     def test_receiver_name_encoding(self) -> None:
         """Tests that the receiver's name is encoded correctly."""
         receiver_name = "Jesse"
-        message = "Hello, World!"
+        message = b"Hello, World!"
         packet = CreateRequest(
             receiver_name,
             message,
@@ -57,7 +57,7 @@ class TestCreateRequestEncoding(unittest.TestCase):
     def test_message_encoding(self) -> None:
         """Tests that the message is encoded correctly."""
         receiver_name = "Jimmy"
-        message = "Hello, World!"
+        message = b"Hello, World!"
         packet = CreateRequest(
             receiver_name,
             message,
@@ -66,7 +66,7 @@ class TestCreateRequestEncoding(unittest.TestCase):
         start_index = CREATE_PACKET_HEADER_SIZE + len(receiver_name.encode())
 
         expected = message
-        actual = packet[start_index : start_index + len(message.encode())].decode()
+        actual = packet[start_index : start_index + len(message)]
         self.assertEqual(expected, actual)
 
 
@@ -78,7 +78,7 @@ class TestCreateRequestDecoding(unittest.TestCase):
         self.message_type = MessageType.CREATE
         self.user_name = "Jamie"
         self.receiver_name = "Jonty"
-        self.message = "Hello, World!"
+        self.message = b"Hello, World!"
 
         self.packet = CreateRequest(
             self.receiver_name,
@@ -98,7 +98,7 @@ class TestCreateRequestDecoding(unittest.TestCase):
         decoded_packet = CreateRequest.decode_packet(self.packet)
 
         expected = self.message
-        actual = decoded_packet[1].decode()
+        actual = decoded_packet[1]
         self.assertEqual(expected, actual)
 
     def test_insufficient_receiver_name_length(self) -> None:

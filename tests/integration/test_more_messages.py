@@ -10,6 +10,8 @@ import client
 import server
 from src.packets.read_response import ReadResponse
 
+MAXIMUM_MESSAGES_PER_RESPONSE = 255
+
 
 class TestMoreMessages(unittest.TestCase):
     """Test suite for the more_messages functionality.
@@ -28,6 +30,8 @@ class TestMoreMessages(unittest.TestCase):
     def test_more_messages(self) -> None:
         """Tests that no more than 255 messages are sent in a read request."""
         names = pathlib.Path("tests/resources/names.txt").read_text().splitlines()
+
+        self.assertEqual(MAXIMUM_MESSAGES_PER_RESPONSE + 1, len(names))
 
         server_object = server.Server([self.PORT_NUMBER])
         server_thread = threading.Thread(target=server_object.run)
@@ -53,8 +57,11 @@ class TestMoreMessages(unittest.TestCase):
         server_object.stop()
         server_thread.join()
 
+        if packet is None:
+            self.fail("packet was `None`")
+
         messages, more_messages = ReadResponse.decode_packet(packet)
-        self.assertEqual(255, len(messages))
+        self.assertEqual(MAXIMUM_MESSAGES_PER_RESPONSE, len(messages))
         self.assertTrue(more_messages)
 
 
