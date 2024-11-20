@@ -54,11 +54,11 @@ class TestMoreMessages(unittest.TestCase):
         recipient_client.send_login_request()
         packet = recipient_client.send_read_request()
 
-        if packet is None:
-            self.fail("packet was `None`")
-
         server_object.stop()
         server_thread.join()
+
+        if packet is None:
+            self.fail("packet was `None`")
 
         messages, more_messages = ReadResponse.decode_packet(packet)
         self.assertEqual(MAXIMUM_MESSAGES_PER_RESPONSE, len(messages))
