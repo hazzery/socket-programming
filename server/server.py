@@ -228,7 +228,7 @@ class Server(CommandLineApplication):
         if response is not None:
             response_type = REQUEST_RESPONSE_MAPPING[message_type]
             packet = TypeWrapper(response_type, response).to_bytes()
-            connection_socket.send(packet)
+            connection_socket.sendall(packet)
 
     def run_server(self, welcoming_socket: socket.socket) -> None:
         """Run the server side of the program.
