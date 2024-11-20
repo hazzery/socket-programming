@@ -273,8 +273,8 @@ class Client(CommandLineApplication):
         """
         help_text = (
             "'register': Register your name and public key with the server.\n"
-            "'login': Get a token from the server for sending and receiving messages\n"
-            "'key': Request a user's public key. Currently not useful.\n"
+            "'login': Get a token from the server for sending and receiving messages.\n"
+            "'key': Request a user's public key so you can send them messages.\n"
             "'create': Send a message to another user.\n"
             "'read': Get all messages sent to you.\n"
             "'help': Show this message.\n"
