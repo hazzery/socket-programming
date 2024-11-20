@@ -166,7 +166,7 @@ class TestServer(unittest.TestCase):
 
         server.messages[receiver_name] = [(sender_name, message)]
 
-        packet = ReadRequest(receiver_name).to_bytes()
+        packet = ReadRequest().to_bytes()
 
         response_packet = server.process_read_request(receiver_name, packet).to_bytes()
 
@@ -185,7 +185,7 @@ class TestServer(unittest.TestCase):
 
         server.messages[receiver_name] = [(sender_name, message)]
 
-        packet = ReadRequest(receiver_name).to_bytes()
+        packet = ReadRequest().to_bytes()
 
         response_packet = server.process_read_request(None, packet).to_bytes()
 

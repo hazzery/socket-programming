@@ -240,7 +240,7 @@ class Client(CommandLineApplication):
             logger.error("Please log in to request messages")
             return None
 
-        request = ReadRequest(self.user_name)
+        request = ReadRequest()
         message_type, payload = self.send_request(request, MessageType.READ)
 
         if payload is None:

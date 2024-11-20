@@ -56,6 +56,7 @@ class ReadResponse(Packet, struct_format="!B?"):
 
         messages: list[tuple[str, bytes]] = []
         remaining_messages = payload
+
         for _ in range(num_messages):
             sender_name, encrypted_message, remaining_messages = Message.decode_packet(
                 remaining_messages,
