@@ -1,7 +1,9 @@
 """The client module contains the Client class."""
 
 import logging
+import pathlib
 import socket
+import ssl
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
 from typing import Final, TypeAlias
@@ -30,6 +32,9 @@ logger = logging.getLogger(__name__)
 # Buffer size chosen as per note in docs:
 # https://docs.python.org/3/library/socket.html#socket.socket.recv
 RECEIVE_BUFFER_SIZE = 4096
+
+
+socket.setdefaulttimeout(1)
 
 
 class Client(CommandLineApplication):
@@ -72,6 +77,28 @@ class Client(CommandLineApplication):
         self.session_token: bytes | None = None
         self.key_cache: dict[str, rsa.PublicKey] = {}
 
+    def secure_connection(self, cafile: str | None = None) -> ssl.SSLSocket:
+        """Create a default context SSLSocket and connect to the server.
+
+        :param cafile: The server's SSL certificate in PEM format.
+        :return: The secure socket object.
+        """
+        if cafile is not None and not pathlib.Path(cafile).exists():
+            message = f"No server certificate file `{cafile}` found"
+            logger.critical(message)
+            raise SystemExit
+
+        ssl_context = ssl.create_default_context()
+        ssl_context.load_verify_locations(cafile=cafile)
+
+        connection_socket = socket.socket()
+        secure_socket = ssl_context.wrap_socket(
+            connection_socket,
+            server_hostname=self.host_name,
+        )
+        secure_socket.connect((self.host_name, self.port_number))
+        return secure_socket
+
     def send_request(
         self,
         request: Packet,
@@ -84,27 +111,24 @@ class Client(CommandLineApplication):
         :param request: The message request to be sent.
         :return: The server's response if applicable, otherwise ``None``.
         """
-        response: tuple[MessageType, bytes] | tuple[None, None] = None, None
-
         packet = TypeWrapper(
             message_type,
             SessionWrapper(self.session_token, request),
         ).to_bytes()
 
         try:
-            with socket.socket() as connection_socket:
-                connection_socket.settimeout(1)
-                connection_socket.connect((self.host_name, self.port_number))
-                connection_socket.send(packet)
-                if expect_response:
-                    response_packet = b""
-                    done = False
-                    while not done:
-                        received_bytes = connection_socket.recv(RECEIVE_BUFFER_SIZE)
-                        response_packet += received_bytes
-                        done = len(received_bytes) < RECEIVE_BUFFER_SIZE
+            with self.secure_connection("server_cert.pem") as secure_socket:
+                secure_socket.send(packet)
 
-                    response = TypeWrapper.decode_packet(response_packet)
+                if not expect_response:
+                    return None, None
+
+                response_packet = b""
+                done = False
+                while not done:
+                    received_bytes = secure_socket.recv(RECEIVE_BUFFER_SIZE)
+                    response_packet += received_bytes
+                    done = len(received_bytes) < RECEIVE_BUFFER_SIZE
 
         except (ConnectionRefusedError, TimeoutError) as error:
             message = (
@@ -114,6 +138,8 @@ class Client(CommandLineApplication):
             )
             logger.exception(message)
             raise SystemExit from error
+
+        response = TypeWrapper.decode_packet(response_packet)
 
         logger.info(
             "%s record sent as %s",

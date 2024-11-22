@@ -1,8 +1,10 @@
 """Home to the ``Server`` class."""
 
 import logging
+import pathlib
 import secrets
 import socket
+import ssl
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
 from typing import Final, TypeAlias
@@ -53,13 +55,26 @@ class Server(CommandLineApplication):
 
         :raise SystemExit: If the socket fails to connect
         """
+        socket.setdefaulttimeout(1)
+
+        if not pathlib.Path("server_cert.pem").exists():
+            logger.critical("No certificate file `server_cert.pem` found")
+            raise SystemExit
+
+        if not pathlib.Path("server_key.pem").exists():
+            logger.critical("No certificate key file `server_key.pem` found")
+            raise SystemExit
+
+        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ssl_context.load_cert_chain(
+            certfile="server_cert.pem",
+            keyfile="server_key.pem",
+        )
         try:
-            # Create a TCP/IP socket
-            with socket.socket() as welcoming_socket:
-                welcoming_socket.settimeout(1)
-                welcoming_socket.bind((self.hostname, self.port_number))
-                # A maximum, of five unprocessed connections are allowed
-                welcoming_socket.listen(5)
+            with ssl_context.wrap_socket(
+                socket.create_server((self.hostname, self.port_number)),
+                server_side=True,
+            ) as welcoming_socket:
                 logger.info(
                     "Server started on %s port %s",
                     self.hostname,
@@ -241,8 +256,6 @@ class Server(CommandLineApplication):
             # Prevent the server from indefinitely waiting for new
             # client requests, so that the ``stop`` function works
             return
-
-        connection_socket.settimeout(1)
 
         logger.info("\nNew client connection from %s", client_address)
 
