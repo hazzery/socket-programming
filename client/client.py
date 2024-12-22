@@ -175,7 +175,7 @@ class Client(CommandLineApplication):
             raise RuntimeError("No response received from server")
 
         if message_type != MessageType.LOGIN_RESPONSE:
-            raise RuntimeError("Recieved incorrect type response from server")
+            raise RuntimeError("Received incorrect type response from server")
 
         (encrypted_session_token,) = LoginResponse.decode_packet(payload)
         logger.debug("Received encrypted token bytes %s", encrypted_session_token)
@@ -208,7 +208,7 @@ class Client(CommandLineApplication):
             raise RuntimeError("No response received from the server")
 
         if message_type != MessageType.KEY_RESPONSE:
-            logger.error("Recieved incorrect type response from server")
+            logger.error("Received incorrect type response from server")
             raise SystemExit
 
         (public_key,) = KeyResponse.decode_packet(payload)
@@ -217,7 +217,7 @@ class Client(CommandLineApplication):
             logger.warning("The requested user is not registered")
         else:
             self.key_cache[receiver_name] = public_key
-            logger.info("Received %s's key:", receiver_name)
+            logger.info("Received %s's key", receiver_name)
 
         return payload
 
@@ -296,7 +296,7 @@ class Client(CommandLineApplication):
             raise RuntimeError("No response received from the server")
 
         if message_type != MessageType.READ_RESPONSE:
-            raise RuntimeError("Incorrect type message recieved from the server.")
+            raise RuntimeError("Incorrect type message received from the server.")
 
         self.read_message_response(payload)
 
