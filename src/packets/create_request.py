@@ -55,7 +55,7 @@ class CreateRequest(Packet, struct_format="!BH"):
 
     @classmethod
     def decode_packet(cls, packet: bytes) -> tuple[str, bytes]:
-        """Decode a message request packet.
+        """Decode a create request packet.
 
         :param packet: An array of bytes containing the create request.
         :raises ValueError: If the packet has incorrect values.
