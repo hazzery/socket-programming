@@ -3,6 +3,7 @@
 import logging
 import pathlib
 import secrets
+import selectors
 import socket
 import ssl
 from collections import OrderedDict
@@ -46,17 +47,17 @@ class Server(CommandLineApplication):
 
         self.running = True
         self.hostname = "localhost"
+        self.selector = selectors.DefaultSelector()
+
         self.users: dict[str, rsa.PublicKey] = {}
         self.sessions: dict[bytes, str] = {}
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
-    def run(self) -> None:
-        """Initiate the welcoming socket and start main event loop.
+    def secure_socket(self) -> ssl.SSLSocket:
+        """Create a new SSL socket using the certificate and key on the disk.
 
-        :raise SystemExit: If the socket fails to connect
+        :return: An SSL socket object configured as the Server's welcoming socket.
         """
-        socket.setdefaulttimeout(1)
-
         if not pathlib.Path("server_cert.pem").exists():
             logger.critical("No certificate file `server_cert.pem` found")
             raise SystemExit
@@ -70,24 +71,59 @@ class Server(CommandLineApplication):
             certfile="server_cert.pem",
             keyfile="server_key.pem",
         )
+
         try:
-            with ssl_context.wrap_socket(
+            return ssl_context.wrap_socket(
                 socket.create_server((self.hostname, self.port_number)),
                 server_side=True,
-            ) as welcoming_socket:
-                logger.info(
-                    "Server started on %s port %s",
-                    self.hostname,
-                    self.port_number,
-                )
-
-                while self.running:
-                    self.run_server(welcoming_socket)
-
+            )
         except OSError as error:
             message = "Error binding socket on provided port"
             logger.exception(message)
             raise SystemExit from error
+
+    def accept_connection(self, welcoming_socket: socket.socket) -> None:
+        """Accept a new client connection and register a callback.
+
+        :param welcoming_socket: The socket with an incoming connection reqeust.
+        """
+        connection_socket, client_address = welcoming_socket.accept()
+
+        logger.info("\nNew client connection from %s", client_address)
+
+        self.selector.register(
+            connection_socket,
+            selectors.EVENT_READ,
+            self.run_server,
+        )
+
+    def run(self, *, welcoming_socket: socket.socket | None = None) -> None:
+        """Initiate the welcoming socket and start main event loop.
+
+        :param welcoming_socket: The socket to initialise as the
+        server's welcoming socket. Leave unspecified or ``None`` to
+        create a new SSL socket to use.
+        """
+        welcoming_socket = welcoming_socket or self.secure_socket()
+        logger.info(
+            "Server started on %s port %s",
+            self.hostname,
+            self.port_number,
+        )
+
+        welcoming_socket.setblocking(False)  # noqa: FBT003
+        self.selector.register(
+            welcoming_socket,
+            selectors.EVENT_READ,
+            self.accept_connection,
+        )
+
+        while self.running:
+            for key, _mask in self.selector.select():
+                callback = key.data
+                callback(key.fileobj)
+
+        welcoming_socket.close()
 
     @staticmethod
     def generate_session_token() -> bytes:
@@ -266,24 +302,20 @@ class Server(CommandLineApplication):
             packet = TypeWrapper(response_type, response).to_bytes()
             connection_socket.sendall(packet)
 
-    def run_server(self, welcoming_socket: socket.socket) -> None:
-        """Run the server side of the program.
+    def run_server(self, connection_socket: socket.socket) -> None:
+        """Receive and process an incoming client request.
 
-        :param welcoming_socket: The welcoming socket to accept connections on
+        :param connection_socket: A socket connected to a client instance.
         """
         try:
-            connection_socket, client_address = welcoming_socket.accept()
-        except TimeoutError:
-            # Prevent the server from indefinitely waiting for new
-            # client requests, so that the ``stop`` function works
-            return
+            packet = connection_socket.recv(4096)
+            if len(packet) == 0:
+                connection_socket.close()
+                logger.info("Closed client connection")
+                self.selector.unregister(connection_socket)
+                return
 
-        logger.info("\nNew client connection from %s", client_address)
-
-        try:
-            with connection_socket:
-                packet = connection_socket.recv(4096)
-                self.process_request(packet, connection_socket)
+            self.process_request(packet, connection_socket)
 
         except TimeoutError:
             error_message = "Timed out while waiting for request"

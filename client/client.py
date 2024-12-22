@@ -40,11 +40,16 @@ socket.setdefaulttimeout(1)
 class Client(CommandLineApplication):
     """Send and receives messages to and from the server."""
 
-    def __init__(self, arguments: list[str]) -> None:
+    def __init__(
+        self,
+        arguments: list[str],
+        connection_socket: socket.socket | None = None,
+    ) -> None:
         """Initialise the client with specified arguments.
 
         :param arguments: A list containing the host name, port number,
         and username.
+        :param connection_socket: The socket to communicate with the server on.
         """
         super().__init__(
             OrderedDict(
@@ -76,6 +81,9 @@ class Client(CommandLineApplication):
 
         self.session_token: bytes | None = None
         self.key_cache: dict[str, rsa.PublicKey] = {}
+        self.connection_socket = connection_socket or self.secure_connection(
+            "server_cert.pem",
+        )
 
     def secure_connection(self, cafile: str | None = None) -> ssl.SSLSocket:
         """Create a default context SSLSocket and connect to the server.
@@ -125,18 +133,20 @@ class Client(CommandLineApplication):
         ).to_bytes()
 
         try:
-            with self.secure_connection("server_cert.pem") as secure_socket:
-                secure_socket.send(packet)
+            self.connection_socket.send(packet)
 
-                if not expect_response:
-                    return None, None
+            if not expect_response:
+                return None, None
 
-                response_packet = b""
-                done = False
-                while not done:
-                    received_bytes = secure_socket.recv(RECEIVE_BUFFER_SIZE)
-                    response_packet += received_bytes
-                    done = len(received_bytes) < RECEIVE_BUFFER_SIZE
+            response_packet = b""
+            done = False
+            while not done:
+                # Note: This order of operations is very important!
+                # An additional call to `recv` when there is no data to
+                # receive will result in a `TimeoutError`.
+                received_bytes = self.connection_socket.recv(RECEIVE_BUFFER_SIZE)
+                response_packet += received_bytes
+                done = len(received_bytes) < RECEIVE_BUFFER_SIZE
 
         except (ConnectionRefusedError, TimeoutError) as error:
             message = (
