@@ -3,7 +3,6 @@
 Defines class for encoding and decoding login response packets.
 """
 
-import logging
 import struct
 
 from src.packets.packet import Packet
@@ -18,8 +17,6 @@ class LoginResponse(Packet, struct_format="!B"):
 
     def to_bytes(self) -> bytes:
         """Encode a login response packet into a byte array."""
-        logging.info("Creating login response")
-
         packet = struct.pack(
             self.struct_format,
             len(self.token),
