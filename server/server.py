@@ -179,6 +179,7 @@ class Server(CommandLineApplication):
         session_token = self.generate_session_token()
         self.sessions[session_token] = sender_name
         logger.debug("Gave %s the token %s", sender_name, session_token)
+        logger.info("Logged in %s", sender_name)
 
         senders_public_key = self.users[sender_name]
         encrypted_session_token = rsa.encrypt(session_token, senders_public_key)
@@ -206,11 +207,7 @@ class Server(CommandLineApplication):
             return
 
         self.users[sender_name] = public_key
-        logger.info(
-            "Registered %s with key %s",
-            sender_name,
-            (public_key.n, public_key.e),
-        )
+        logger.info("Registered %s", sender_name)
 
     def process_key_request(
         self,
@@ -230,9 +227,11 @@ class Server(CommandLineApplication):
         logger.info("Received request for %s's key", requested_user)
 
         if requested_user not in self.users:
+            logger.info("%s is not registered, sending empty response", requested_user)
             return KeyResponse(None)
 
         public_key = self.users[requested_user]
+        logger.info("Responding with %s's key", requested_user)
         return KeyResponse(public_key)
 
     def process_request(
@@ -256,6 +255,8 @@ class Server(CommandLineApplication):
         if message_type not in PROCESS_REQUEST_MAPPING:
             logging.error("Message of incorrect type received!")
             return
+
+        logger.info("Received %s request", message_type.name)
 
         processor_function = PROCESS_REQUEST_MAPPING[message_type]
         response = processor_function(self, requestor_username, packet)
@@ -285,10 +286,10 @@ class Server(CommandLineApplication):
                 self.process_request(packet, connection_socket)
 
         except TimeoutError:
-            error_message = "Timed out while waiting for message request"
+            error_message = "Timed out while waiting for request"
             logger.exception(error_message)
         except ValueError:
-            error_message = "Message request discarded"
+            error_message = "Request discarded"
             logger.exception(error_message)
 
     def stop(self) -> None:
