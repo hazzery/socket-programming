@@ -91,7 +91,10 @@ class Server(CommandLineApplication):
 
     @staticmethod
     def generate_session_token() -> bytes:
-        """Generate a random session token."""
+        """Generate a random session token.
+
+        :return: A securely randomised token.
+        """
         return secrets.token_bytes()
 
     def process_read_request(
@@ -101,8 +104,13 @@ class Server(CommandLineApplication):
     ) -> ReadResponse:
         """Respond to read requests.
 
-        :param packet: The read request packet to process.
-        :param connection_socket: The connection socket to send the response on.
+        :param requestor_username: The username of the user requesting
+        to read their messages.
+
+        :param _packet: This parameter exists to fit the same signature
+        as the other request processor functions.
+
+        :return: The packet object to send in response to the read request.
         """
         if requestor_username is None:
             logger.info(
@@ -129,7 +137,7 @@ class Server(CommandLineApplication):
     ) -> None:
         """Process create requests.
 
-        :param session_token: The token provided by the client.
+        :param requestor_username: The username of the user who sent the create request.
         :param packet: The packet provided by the client.
         """
         if requestor_username is None:
@@ -155,7 +163,12 @@ class Server(CommandLineApplication):
     ) -> LoginResponse:
         """Process a client requset to login.
 
-        :param packet: A byte array containing the login request.
+        :param _requestor_username: This parameter exists to fit the
+        same signature as the other request processor functions.
+
+        :param packet: The login requset packet to process.
+
+        :return: The packet object to respond to the login request with.
         """
         (sender_name,) = LoginRequest.decode_packet(packet)
 
@@ -180,6 +193,9 @@ class Server(CommandLineApplication):
     ) -> None:
         """Process a client request to register a new name.
 
+        :param _requestor_username: This parameter exists to fit the
+        same signature as the other request processor functions.
+
         :param packet: A byte array containing the registration request.
         """
         sender_name, public_key = RegistrationRequest.decode_packet(packet)
@@ -203,8 +219,12 @@ class Server(CommandLineApplication):
     ) -> KeyResponse:
         """Process a client request for a user's public key.
 
+        :param _requestor_username: This parameter exists to fit the
+        same signature as the other request processor functions.
+
         :param packet: A byte array containing the key request.
-        :param connection_socket: The socket to send the response over.
+
+        :return: The packet object to respond to the key request with.
         """
         (requested_user,) = KeyRequest.decode_packet(packet)
         logger.info("Received request for %s's key", requested_user)
