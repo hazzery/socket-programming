@@ -22,13 +22,4 @@ exclude = ["docs/conf.py"]
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = [
-  "D203",
-  "D213",
-  "EM101",
-  "TRY003",
-  "FBT001",
-  "ANN101",
-  "ANN102",
-  "PT",
-]
+ignore = ["D203", "D213", "EM101", "TRY003", "FBT001", "ANN101", "ANN102"]
