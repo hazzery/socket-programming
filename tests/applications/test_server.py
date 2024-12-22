@@ -1,7 +1,6 @@
 """Server class test suite."""
 
-import unittest
-
+import pytest
 import rsa
 
 from server import Server
@@ -16,180 +15,181 @@ from src.packets.registration_request import RegistrationRequest
 from src.packets.session_wrapper import SessionWrapper
 
 DUMMY_SESSION_TOKEN = b"01234567890123456789012345678901"
+PORT_NUMBER = "12000"
+HOSTNAME = "localhost"
 
 
-class TestServer(unittest.TestCase):
-    """Test suite for Server class."""
+def test_construction() -> None:
+    """Tests that a Server object can be constructed given correct arguments."""
+    Server([PORT_NUMBER])
 
-    port_number = 12000
-    hostname = "localhost"
 
-    def test_construction(self) -> None:
-        """Tests that a Server object can be constructed given correct arguments."""
-        Server([str(TestServer.port_number)])
+def test_construction_raise_error() -> None:
+    """Tests that a Server object cannot be constructed given invalid arguments."""
+    with pytest.raises(SystemExit):
+        Server([PORT_NUMBER, "Extra argument"])
 
-    def test_construction_raise_error(self) -> None:
-        """Tests that a Server object cannot be constructed given invalid arguments."""
-        self.assertRaises(
-            SystemExit,
-            Server,
-            [str(TestServer.port_number), "Extra argument"],
-        )
 
-    def test_process_register_request_unused_name(self) -> None:
-        """Tests that the server correctly registers new users."""
-        server = Server([str(TestServer.port_number)])
+def test_process_register_request_unused_name() -> None:
+    """Tests that the server correctly registers new users."""
+    server = Server([PORT_NUMBER])
 
-        username = "John"
-        public_key, _ = rsa.newkeys(512)
+    username = "John"
+    public_key, _ = rsa.newkeys(512)
 
-        packet = RegistrationRequest(username, public_key).to_bytes()
+    packet = RegistrationRequest(username, public_key).to_bytes()
 
-        server.process_registration_request(None, packet)
+    server.process_registration_request(None, packet)
 
-        self.assertEqual({username: public_key}, server.users)
+    assert server.users == {username: public_key}
 
-    def test_process_register_request_used_name(self) -> None:
-        """Tests that the server correctly ignores re-registers."""
-        server = Server([str(TestServer.port_number)])
 
-        username = "John"
-        existing_key, _ = rsa.newkeys(512)
-        public_key, _ = rsa.newkeys(512)
+def test_process_register_request_used_name() -> None:
+    """Tests that the server correctly ignores re-registers."""
+    server = Server([PORT_NUMBER])
 
-        server.users = {username: existing_key}
+    username = "John"
+    existing_key, _ = rsa.newkeys(512)
+    public_key, _ = rsa.newkeys(512)
 
-        packet = RegistrationRequest(username, public_key).to_bytes()
+    server.users = {username: existing_key}
 
-        server.process_registration_request(None, packet)
+    packet = RegistrationRequest(username, public_key).to_bytes()
 
-        self.assertEqual({username: existing_key}, server.users)
+    server.process_registration_request(None, packet)
 
-    def test_process_login_request_registered_user(self) -> None:
-        """Tests that the server correctly responds to login requests."""
-        server = Server([str(TestServer.port_number)])
+    assert server.users == {username: existing_key}
 
-        username = "John"
-        public_key, private_key = rsa.newkeys(512)
 
-        server.users = {username: public_key}
+def test_process_login_request_registered_user() -> None:
+    """Tests that the server correctly responds to login requests."""
+    server = Server([PORT_NUMBER])
 
-        packet = LoginRequest(username).to_bytes()
+    username = "John"
+    public_key, private_key = rsa.newkeys(512)
 
-        response = server.process_login_request(None, packet).to_bytes()
+    server.users = {username: public_key}
 
-        (encrypted_session_token,) = LoginResponse.decode_packet(response)
-        session_token = rsa.decrypt(encrypted_session_token, private_key)
+    packet = LoginRequest(username).to_bytes()
 
-        self.assertEqual(SessionWrapper.SESSION_TOKEN_LENGTH, len(session_token))
+    response = server.process_login_request(None, packet).to_bytes()
 
-    def test_process_login_request_unknown_user(self) -> None:
-        """Tests the the server responds correctly to login requests."""
-        server = Server([str(TestServer.port_number)])
+    (encrypted_session_token,) = LoginResponse.decode_packet(response)
+    session_token = rsa.decrypt(encrypted_session_token, private_key)
 
-        username = "John"
+    assert len(session_token) == SessionWrapper.SESSION_TOKEN_LENGTH
 
-        packet = LoginRequest(username).to_bytes()
 
-        response_packet = server.process_login_request(None, packet).to_bytes()
+def test_process_login_request_unknown_user() -> None:
+    """Tests the the server responds correctly to login requests."""
+    server = Server([PORT_NUMBER])
 
-        (encrypted_session_token,) = LoginResponse.decode_packet(response_packet)
+    username = "John"
 
-        self.assertEqual(b"", encrypted_session_token)
+    packet = LoginRequest(username).to_bytes()
 
-    def test_process_key_request_registered_user(self) -> None:
-        """Tests that the server correctly responds to key request."""
-        server = Server([str(TestServer.port_number)])
+    response_packet = server.process_login_request(None, packet).to_bytes()
 
-        receiver_name = "John"
-        recipients_key, _ = rsa.newkeys(512)
+    (encrypted_session_token,) = LoginResponse.decode_packet(response_packet)
 
-        server.users = {receiver_name: recipients_key}
+    assert encrypted_session_token == b""
 
-        packet = KeyRequest(receiver_name).to_bytes()
 
-        response_packet = server.process_key_request(None, packet).to_bytes()
-        (public_key,) = KeyResponse.decode_packet(response_packet)
+def test_process_key_request_registered_user() -> None:
+    """Tests that the server correctly responds to key request."""
+    server = Server([PORT_NUMBER])
 
-        self.assertEqual(recipients_key, public_key)
+    receiver_name = "John"
+    recipients_key, _ = rsa.newkeys(512)
 
-    def test_process_key_request_unknown_user(self) -> None:
-        """Tests that the server correctly responds to key request."""
-        server = Server([str(TestServer.port_number)])
+    server.users = {receiver_name: recipients_key}
 
-        receiver_name = "John"
+    packet = KeyRequest(receiver_name).to_bytes()
 
-        packet = KeyRequest(receiver_name).to_bytes()
+    response_packet = server.process_key_request(None, packet).to_bytes()
+    (public_key,) = KeyResponse.decode_packet(response_packet)
 
-        response_packet = server.process_key_request(None, packet).to_bytes()
-        (public_key,) = KeyResponse.decode_packet(response_packet)
+    assert public_key == recipients_key
 
-        self.assertEqual(None, public_key)
 
-    def test_process_create_request_authorised(self) -> None:
-        """Tests that the server correctly stores messages in create requests."""
-        server = Server([str(TestServer.port_number)])
+def test_process_key_request_unknown_user() -> None:
+    """Tests that the server correctly responds to key request."""
+    server = Server([PORT_NUMBER])
 
-        sender_name = "Alice"
-        receiver_name = "John"
-        message = b"Hello John"
+    receiver_name = "John"
 
-        packet = CreateRequest(receiver_name, message).to_bytes()
+    packet = KeyRequest(receiver_name).to_bytes()
 
-        server.process_create_request(sender_name, packet)
+    response_packet = server.process_key_request(None, packet).to_bytes()
+    (public_key,) = KeyResponse.decode_packet(response_packet)
 
-        self.assertEqual(
-            [(sender_name, message)],
-            server.messages[receiver_name],
-        )
+    assert public_key is None
 
-    def test_process_create_request_unauthorised(self) -> None:
-        """Tests that the server ignores messages in unauthorised create requests."""
-        server = Server([str(TestServer.port_number)])
 
-        receiver_name = "John"
-        message = b"Hello John"
+def test_process_create_request_authorised() -> None:
+    """Tests that the server correctly stores messages in create requests."""
+    server = Server([PORT_NUMBER])
 
-        packet = CreateRequest(receiver_name, message).to_bytes()
+    sender_name = "Alice"
+    receiver_name = "John"
+    message = b"Hello John"
 
-        server.process_create_request(None, packet)
+    packet = CreateRequest(receiver_name, message).to_bytes()
 
-        self.assertEqual(None, server.messages.get(receiver_name, None))
+    server.process_create_request(sender_name, packet)
 
-    def test_process_read_request_authorised(self) -> None:
-        """Tests that the server correctly responds to authorised read requests."""
-        server = Server([str(TestServer.port_number)])
+    assert server.messages[receiver_name] == [(sender_name, message)]
 
-        sender_name = "Alice"
-        receiver_name = "John"
-        message = b"Hello John"
 
-        server.messages[receiver_name] = [(sender_name, message)]
+def test_process_create_request_unauthorised() -> None:
+    """Tests that the server ignores messages in unauthorised create requests."""
+    server = Server([PORT_NUMBER])
 
-        packet = ReadRequest().to_bytes()
+    receiver_name = "John"
+    message = b"Hello John"
 
-        response_packet = server.process_read_request(receiver_name, packet).to_bytes()
+    packet = CreateRequest(receiver_name, message).to_bytes()
 
-        messages, more_messages = ReadResponse.decode_packet(response_packet)
+    server.process_create_request(None, packet)
 
-        self.assertEqual([(sender_name, message)], messages)
-        self.assertEqual(False, more_messages)
+    assert server.messages.get(receiver_name, None) is None
 
-    def test_process_read_request_unauthorised(self) -> None:
-        """Tests that the server responds correctly to unauthorised read reqeusts."""
-        server = Server([str(TestServer.port_number)])
 
-        sender_name = "Alice"
-        receiver_name = "John"
-        message = b"Hello John"
+def test_process_read_request_authorised() -> None:
+    """Tests that the server correctly responds to authorised read requests."""
+    server = Server([PORT_NUMBER])
 
-        server.messages[receiver_name] = [(sender_name, message)]
+    sender_name = "Alice"
+    receiver_name = "John"
+    message = b"Hello John"
 
-        packet = ReadRequest().to_bytes()
+    server.messages[receiver_name] = [(sender_name, message)]
 
-        response_packet = server.process_read_request(None, packet).to_bytes()
+    packet = ReadRequest().to_bytes()
 
-        messages, more_messages = ReadResponse.decode_packet(response_packet)
+    response_packet = server.process_read_request(receiver_name, packet).to_bytes()
 
-        self.assertEqual([], messages)
-        self.assertEqual(False, more_messages)
+    messages, more_messages = ReadResponse.decode_packet(response_packet)
+
+    assert messages == [(sender_name, message)]
+    assert more_messages is False
+
+
+def test_process_read_request_unauthorised() -> None:
+    """Tests that the server responds correctly to unauthorised read reqeusts."""
+    server = Server([PORT_NUMBER])
+
+    sender_name = "Alice"
+    receiver_name = "John"
+    message = b"Hello John"
+
+    server.messages[receiver_name] = [(sender_name, message)]
+
+    packet = ReadRequest().to_bytes()
+
+    response_packet = server.process_read_request(None, packet).to_bytes()
+
+    messages, more_messages = ReadResponse.decode_packet(response_packet)
+
+    assert messages == []
+    assert more_messages is False
