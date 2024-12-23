@@ -4,7 +4,6 @@ Defines the RegistrationRequest class which is used to encode and decode
 registration request packets.
 """
 
-import logging
 import struct
 
 import rsa
@@ -22,8 +21,6 @@ class RegistrationRequest(Packet, struct_format="!BHH"):
 
     def to_bytes(self) -> bytes:
         """Encode the registration request packet into a byte array."""
-        logging.debug("Creating request to register as %s", self.user_name)
-
         user_name = self.user_name.encode()
 
         product = self.public_key.n.to_bytes(

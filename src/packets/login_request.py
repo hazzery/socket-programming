@@ -3,7 +3,6 @@
 Defines the LoginRequest class which is used to encode and decode login request packets.
 """
 
-import logging
 import struct
 from typing import Any
 
@@ -19,8 +18,6 @@ class LoginRequest(Packet, struct_format="!B"):
 
     def to_bytes(self) -> bytes:
         """Encode the login request packet into a byte array."""
-        logging.debug("Creating log-in request as %s", self.user_name)
-
         packet = struct.pack(
             self.struct_format,
             len(self.user_name.encode()),

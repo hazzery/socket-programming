@@ -1,123 +1,138 @@
 """``CreateRequest`` class test suite."""
 
 import struct
-import unittest
 
-from src.message_type import MessageType
+import pytest
+
 from src.packets.create_request import CreateRequest
 
 CREATE_PACKET_HEADER_SIZE = struct.calcsize(CreateRequest.struct_format)
 
 
-class TestCreateRequestEncoding(unittest.TestCase):
-    """Test suite for encoding MessageRequest packets."""
+def test_receiver_name_length_encoding() -> None:
+    """Tests that the length of the receiver's name is encoded correctly."""
+    receiver_name = "Jake"
+    message = b"Hello, World!"
+    packet = CreateRequest(
+        receiver_name,
+        message,
+    ).to_bytes()
 
-    def test_receiver_name_length_encoding(self) -> None:
-        """Tests that the length of the receiver's name is encoded correctly."""
-        receiver_name = "Jake"
-        message = b"Hello, World!"
-        packet = CreateRequest(
-            receiver_name,
-            message,
-        ).to_bytes()
-
-        expected = len(receiver_name.encode())
-        actual = packet[0]
-        self.assertEqual(expected, actual)
-
-    def test_message_length_encoding(self) -> None:
-        """Tests that the length of the message is encoded correctly."""
-        receiver_name = "Jay"
-        message = b"Hello, World!"
-        packet = CreateRequest(
-            receiver_name,
-            message,
-        ).to_bytes()
-
-        expected = len(message)
-        actual = (packet[1] << 8) | (packet[2] & 0xFF)
-        self.assertEqual(expected, actual)
-
-    def test_receiver_name_encoding(self) -> None:
-        """Tests that the receiver's name is encoded correctly."""
-        receiver_name = "Jesse"
-        message = b"Hello, World!"
-        packet = CreateRequest(
-            receiver_name,
-            message,
-        ).to_bytes()
-
-        expected = receiver_name
-        actual = packet[
-            CREATE_PACKET_HEADER_SIZE : CREATE_PACKET_HEADER_SIZE
-            + len(receiver_name.encode())
-        ].decode()
-        self.assertEqual(expected, actual)
-
-    def test_message_encoding(self) -> None:
-        """Tests that the message is encoded correctly."""
-        receiver_name = "Jimmy"
-        message = b"Hello, World!"
-        packet = CreateRequest(
-            receiver_name,
-            message,
-        ).to_bytes()
-
-        start_index = CREATE_PACKET_HEADER_SIZE + len(receiver_name.encode())
-
-        expected = message
-        actual = packet[start_index : start_index + len(message)]
-        self.assertEqual(expected, actual)
+    expected = len(receiver_name.encode())
+    actual = packet[0]
+    assert expected == actual
 
 
-class TestCreateRequestDecoding(unittest.TestCase):
-    """Test suite for decoding ``CreateRequest`` packets."""
+def test_message_length_encoding() -> None:
+    """Tests that the length of the message is encoded correctly."""
+    receiver_name = "Jay"
+    message = b"Hello, World!"
+    packet = CreateRequest(
+        receiver_name,
+        message,
+    ).to_bytes()
 
-    def setUp(self) -> None:
-        """Set up the testing environment."""
-        self.message_type = MessageType.CREATE
-        self.user_name = "Jamie"
-        self.receiver_name = "Jonty"
-        self.message = b"Hello, World!"
+    expected = len(message)
+    actual = (packet[1] << 8) | (packet[2] & 0xFF)
+    assert expected == actual
 
-        self.packet = CreateRequest(
-            self.receiver_name,
-            self.message,
-        ).to_bytes()
 
-    def test_receiver_name_decoding(self) -> None:
-        """Tests that the receiver's name is decoded correctly."""
-        decoded_packet = CreateRequest.decode_packet(self.packet)
+def test_receiver_name_encoding() -> None:
+    """Tests that the receiver's name is encoded correctly."""
+    receiver_name = "Jesse"
+    message = b"Hello, World!"
+    packet = CreateRequest(
+        receiver_name,
+        message,
+    ).to_bytes()
 
-        expected = self.receiver_name
-        actual = decoded_packet[0]
-        self.assertEqual(expected, actual)
+    expected = receiver_name
+    actual = packet[
+        CREATE_PACKET_HEADER_SIZE : CREATE_PACKET_HEADER_SIZE
+        + len(receiver_name.encode())
+    ].decode()
+    assert expected == actual
 
-    def test_message_decoding(self) -> None:
-        """Tests that the message is decoded correctly."""
-        decoded_packet = CreateRequest.decode_packet(self.packet)
 
-        expected = self.message
-        actual = decoded_packet[1]
-        self.assertEqual(expected, actual)
+def test_message_encoding() -> None:
+    """Tests that the message is encoded correctly."""
+    receiver_name = "Jimmy"
+    message = b"Hello, World!"
+    packet = CreateRequest(
+        receiver_name,
+        message,
+    ).to_bytes()
 
-    def test_insufficient_receiver_name_length(self) -> None:
-        """Tests that an exception is raised.
+    start_index = CREATE_PACKET_HEADER_SIZE + len(receiver_name.encode())
 
-        If the length of the receiver's name is zero.
-        """
-        packet = bytearray(self.packet)
-        packet[0] = 0
+    expected = message
+    actual = packet[start_index : start_index + len(message)]
+    assert expected == actual
 
-        self.assertRaises(ValueError, CreateRequest.decode_packet, packet)
 
-    def test_insufficient_message_length(self) -> None:
-        """Tests that an exception is raised.
+def test_create_request_decoding() -> None:
+    """Tests that the decode function correctly decodes packets."""
+    receiver_name = "Jonty"
+    message = b"Hello, World!"
 
-        If the length of the message is zero.
-        """
-        packet = bytearray(self.packet)
-        packet[1] = 0
-        packet[2] = 0
+    packet = struct.pack(
+        CreateRequest.struct_format,
+        len(receiver_name.encode()),
+        len(message),
+    )
 
-        self.assertRaises(ValueError, CreateRequest.decode_packet, packet)
+    packet += receiver_name.encode()
+    packet += message
+
+    decoded_name, decoded_message = CreateRequest.decode_packet(packet)
+
+    assert decoded_name == receiver_name
+    assert decoded_message == message
+
+
+def test_insufficient_receiver_name_length() -> None:
+    """Tests that an exception is raised.
+
+    If the length of the receiver's name is zero.
+    """
+    receiver_name = "Jonty"
+    message = b"Hello, World!"
+
+    packet = struct.pack(
+        CreateRequest.struct_format,
+        0,
+        len(message),
+    )
+
+    packet += receiver_name.encode()
+    packet += message
+
+    with pytest.raises(
+        ValueError,
+        match="Received create request with insufficient receiver name length",
+    ):
+        CreateRequest.decode_packet(packet)
+
+
+def test_insufficient_message_length() -> None:
+    """Tests that an exception is raised.
+
+    If the length of the message is zero.
+    """
+    receiver_name = "Jonty"
+    message = b"Hello, World!"
+
+    packet = struct.pack(
+        CreateRequest.struct_format,
+        len(receiver_name.encode()),
+        0,
+    )
+
+    packet += receiver_name.encode()
+    packet += message
+
+    with pytest.raises(
+        ValueError,
+        match="Received create request with insufficient message length",
+    ):
+        CreateRequest.decode_packet(packet)

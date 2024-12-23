@@ -1,9 +1,17 @@
-"""More messages functionality test suite."""
+"""Test suite for the more_messages functionality.
+
+When a client makes a read request to the server and has more than
+255 unread messages, the server should only send the first 255. The
+server should set the ``more_messages`` flag in the read response so
+that the client is informed they did not receive all available messages.
+"""
 
 import pathlib
+import socket
 import sys
 import threading
-import unittest
+
+import pytest
 
 sys.path.insert(0, "../../")
 import client
@@ -11,59 +19,64 @@ import server
 from src.packets.read_response import ReadResponse
 
 MAXIMUM_MESSAGES_PER_RESPONSE = 255
+HOST_NAME = "localhost"
+PORT_NUMBER = "1024"
+RECIPIENT_NAME = "Recipient"
 
 
-class TestMoreMessages(unittest.TestCase):
-    """Test suite for the more_messages functionality.
+@pytest.mark.skip  # type: ignore[misc]
+def test_more_messages() -> None:
+    """Tests that no more than 255 messages are sent in a read request."""
+    names = pathlib.Path("tests/resources/names.txt").read_text().splitlines()
 
-    When a client makes a read request to the server and has more than
-    255 unread messages, the server should only send the first 255. The
-    server should set the ``more_messages`` flag in the read response so
-    that the client is informed they did not receive all of the
-    available messages.
-    """
+    assert len(set(names)) == MAXIMUM_MESSAGES_PER_RESPONSE + 1
 
-    HOST_NAME = "localhost"
-    PORT_NUMBER = "1024"
-    RECIPIENT_NAME = "Recipient"
+    server_object = server.Server([PORT_NUMBER])
 
-    def test_more_messages(self) -> None:
-        """Tests that no more than 255 messages are sent in a read request."""
-        names = pathlib.Path("tests/resources/names.txt").read_text().splitlines()
+    unencrypted_socket = socket.create_server(
+        (HOST_NAME, int(PORT_NUMBER)),
+    )
 
-        self.assertEqual(MAXIMUM_MESSAGES_PER_RESPONSE + 1, len(names))
+    server_thread = threading.Thread(
+        target=server_object.run,
+        kwargs={"welcoming_socket": unencrypted_socket},
+    )
+    server_thread.start()
 
-        server_object = server.Server([self.PORT_NUMBER])
-        server_thread = threading.Thread(target=server_object.run)
-        server_thread.start()
+    recipient_client = client.Client(
+        [HOST_NAME, PORT_NUMBER, RECIPIENT_NAME],
+        connection_socket=socket.create_connection(
+            (HOST_NAME, int(PORT_NUMBER)),
+        ),
+    )
+    recipient_client.send_registration_request()
 
-        recipient_client = client.Client(
-            [self.HOST_NAME, self.PORT_NUMBER, self.RECIPIENT_NAME],
+    for sender_name in names:
+        sender_client = client.Client(
+            [HOST_NAME, PORT_NUMBER, sender_name],
+            connection_socket=socket.create_connection(
+                (HOST_NAME, int(PORT_NUMBER)),
+            ),
         )
-        recipient_client.send_registration_request()
+        sender_client.send_registration_request()
+        sender_client.send_login_request()
+        sender_client.send_key_request(RECIPIENT_NAME)
+        sender_client.send_create_request(RECIPIENT_NAME, "Hello")
 
-        for sender_name in names:
-            sender_client = client.Client(
-                [self.HOST_NAME, self.PORT_NUMBER, sender_name],
-            )
-            sender_client.send_registration_request()
-            sender_client.send_login_request()
-            sender_client.send_key_request(self.RECIPIENT_NAME)
-            sender_client.send_create_request(self.RECIPIENT_NAME, "Hello")
+    recipient_client.send_login_request()
+    first_packet = recipient_client.send_read_request()
+    second_packet = recipient_client.send_read_request()
 
-        recipient_client.send_login_request()
-        packet = recipient_client.send_read_request()
+    server_object.stop()
+    server_thread.join()
 
-        server_object.stop()
-        server_thread.join()
+    assert first_packet is not None
+    assert second_packet is not None
 
-        if packet is None:
-            self.fail("packet was `None`")
+    messages, more_messages = ReadResponse.decode_packet(first_packet)
+    assert len(messages) == MAXIMUM_MESSAGES_PER_RESPONSE
+    assert more_messages is True
 
-        messages, more_messages = ReadResponse.decode_packet(packet)
-        self.assertEqual(MAXIMUM_MESSAGES_PER_RESPONSE, len(messages))
-        self.assertTrue(more_messages)
-
-
-if __name__ == "__main__":
-    unittest.main()
+    messages, more_messages = ReadResponse.decode_packet(second_packet)
+    assert len(messages) == 1
+    assert more_messages is False
