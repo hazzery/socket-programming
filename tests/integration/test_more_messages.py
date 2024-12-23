@@ -31,7 +31,7 @@ def test_more_messages() -> None:
 
     assert len(set(names)) == MAXIMUM_MESSAGES_PER_RESPONSE + 1
 
-    server_object = server.Server([PORT_NUMBER])
+    server_object = server.Server([HOST_NAME, PORT_NUMBER])
 
     unencrypted_socket = socket.create_server(
         (HOST_NAME, int(PORT_NUMBER)),
