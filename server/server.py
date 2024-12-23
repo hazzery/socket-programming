@@ -24,6 +24,7 @@ from src.packets.read_response import ReadResponse
 from src.packets.registration_request import RegistrationRequest
 from src.packets.session_wrapper import SessionWrapper
 from src.packets.type_wrapper import TypeWrapper
+from src.parse_hostname import parse_hostname
 from src.port_number import PortNumber
 from src.receive_all import receive_all
 
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 class Server(CommandLineApplication):
     """A server side program that receives messages from clients and stores them.
 
-    The server can be run with ``python3 -m server <port number>``.
+    The server can be run with ``python3 -m server <hostname> <port number>``.
     """
 
     def __init__(self, arguments: list[str]) -> None:
@@ -43,13 +44,13 @@ class Server(CommandLineApplication):
 
         :param arguments: The program arguments from the command line.
         """
-        super().__init__(OrderedDict(port_number=PortNumber))
+        super().__init__(OrderedDict(hostname=parse_hostname, port_number=PortNumber))
 
+        self.hostname: str
         self.port_number: PortNumber
-        (self.port_number,) = self.parse_arguments(arguments)
+        self.hostname, self.port_number = self.parse_arguments(arguments)
 
         self.running = True
-        self.hostname = "localhost"
         self.selector = selectors.DefaultSelector()
 
         self.users: dict[str, rsa.PublicKey] = {}
