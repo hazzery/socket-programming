@@ -27,8 +27,10 @@ class PathnameFormatter(logging.Formatter):
         """Make the filename clickable in PyCharm."""
         record.pathname = record.name.replace(".", "/") + ".py:" + str(record.lineno)
 
-        # Remove newlines from logs being sent to a file
-        record.msg = record.msg.lstrip("\n").replace("\n", " ")
+        if isinstance(record.msg, str):
+            # Remove newlines from logs being sent to a file
+            record.msg = record.msg.lstrip("\n").replace("\n", " ")
+
         return super().format(record)
 
 
