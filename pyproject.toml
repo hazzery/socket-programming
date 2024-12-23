@@ -13,6 +13,10 @@ classifiers = [
   "Intended Audience :: Education",
 ]
 
+[project.optional-dependencies]
+tests = ["pytest", "pytest-cov"]
+lint = ["ruff", "mypy", "pre-commit"]
+
 [project.urls]
 "Homepage" = "https://github.com/hazzery/socket-programming"
 "Bug Tracker" = "https://github.com/hazzery/socket-programming/issues"
