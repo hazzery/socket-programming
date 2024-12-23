@@ -26,6 +26,7 @@ from src.packets.type_wrapper import TypeWrapper
 from src.parse_hostname import parse_hostname
 from src.parse_username import parse_username
 from src.port_number import PortNumber
+from src.receive_all import receive_all
 
 logger = logging.getLogger(__name__)
 
@@ -138,15 +139,7 @@ class Client(CommandLineApplication):
             if not expect_response:
                 return None, None
 
-            response_packet = b""
-            done = False
-            while not done:
-                # Note: This order of operations is very important!
-                # An additional call to `recv` when there is no data to
-                # receive will result in a `TimeoutError`.
-                received_bytes = self.connection_socket.recv(RECEIVE_BUFFER_SIZE)
-                response_packet += received_bytes
-                done = len(received_bytes) < RECEIVE_BUFFER_SIZE
+            response_packet = receive_all(self.connection_socket, RECEIVE_BUFFER_SIZE)
 
         except (ConnectionRefusedError, TimeoutError) as error:
             message = (
