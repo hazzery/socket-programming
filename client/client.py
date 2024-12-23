@@ -1,7 +1,9 @@
 """The client module contains the Client class."""
 
 import logging
+import pathlib
 import socket
+import ssl
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
 from typing import Final, TypeAlias
@@ -24,6 +26,7 @@ from src.packets.type_wrapper import TypeWrapper
 from src.parse_hostname import parse_hostname
 from src.parse_username import parse_username
 from src.port_number import PortNumber
+from src.receive_all import receive_all
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +35,22 @@ logger = logging.getLogger(__name__)
 RECEIVE_BUFFER_SIZE = 4096
 
 
+socket.setdefaulttimeout(1)
+
+
 class Client(CommandLineApplication):
     """Send and receives messages to and from the server."""
 
-    def __init__(self, arguments: list[str]) -> None:
+    def __init__(
+        self,
+        arguments: list[str],
+        connection_socket: socket.socket | None = None,
+    ) -> None:
         """Initialise the client with specified arguments.
 
         :param arguments: A list containing the host name, port number,
         and username.
+        :param connection_socket: The socket to communicate with the server on.
         """
         super().__init__(
             OrderedDict(
@@ -71,6 +82,33 @@ class Client(CommandLineApplication):
 
         self.session_token: bytes | None = None
         self.key_cache: dict[str, rsa.PublicKey] = {}
+        self.connection_socket = connection_socket or self.secure_connection(
+            "server_cert.pem",
+        )
+
+    def secure_connection(self, cafile: str | None = None) -> ssl.SSLSocket:
+        """Create a default context SSLSocket and connect to the server.
+
+        :param cafile: The server's SSL certificate in PEM format.
+        Defaults to ``None``.
+
+        :return: The secure socket object.
+        """
+        if cafile is not None and not pathlib.Path(cafile).exists():
+            message = f"No server certificate file `{cafile}` found"
+            logger.critical(message)
+            raise SystemExit
+
+        ssl_context = ssl.create_default_context()
+        ssl_context.load_verify_locations(cafile=cafile)
+
+        connection_socket = socket.socket()
+        secure_socket = ssl_context.wrap_socket(
+            connection_socket,
+            server_hostname=self.host_name,
+        )
+        secure_socket.connect((self.host_name, self.port_number))
+        return secure_socket
 
     def send_request(
         self,
@@ -79,32 +117,29 @@ class Client(CommandLineApplication):
         *,
         expect_response: bool = True,
     ) -> tuple[MessageType, bytes] | tuple[None, None]:
-        """Send a message request record to the server.
+        """Send a request to the server and optionally await its response.
 
-        :param request: The message request to be sent.
-        :return: The server's response if applicable, otherwise ``None``.
+        :param request: The packet object containing request to be sent.
+        :param message_type: The type of message contained in ``request``.
+        :param expect_response: Set this value to ``False`` to prevent a read
+        from the connection socket. Defaults to ``True``.
+
+        :return: A tuple containing the type of the server's response
+        message and the response as a byte string. Both values will be
+        ``None`` if ``expect_response`` is set to False.
         """
-        response: tuple[MessageType, bytes] | tuple[None, None] = None, None
-
         packet = TypeWrapper(
             message_type,
             SessionWrapper(self.session_token, request),
         ).to_bytes()
 
         try:
-            with socket.socket() as connection_socket:
-                connection_socket.settimeout(1)
-                connection_socket.connect((self.host_name, self.port_number))
-                connection_socket.send(packet)
-                if expect_response:
-                    response_packet = b""
-                    done = False
-                    while not done:
-                        received_bytes = connection_socket.recv(RECEIVE_BUFFER_SIZE)
-                        response_packet += received_bytes
-                        done = len(received_bytes) < RECEIVE_BUFFER_SIZE
+            self.connection_socket.send(packet)
 
-                    response = TypeWrapper.decode_packet(response_packet)
+            if not expect_response:
+                return None, None
+
+            response_packet = receive_all(self.connection_socket, RECEIVE_BUFFER_SIZE)
 
         except (ConnectionRefusedError, TimeoutError) as error:
             message = (
@@ -114,6 +149,8 @@ class Client(CommandLineApplication):
             )
             logger.exception(message)
             raise SystemExit from error
+
+        response = TypeWrapper.decode_packet(response_packet)
 
         logger.info(
             "%s record sent as %s",
@@ -141,7 +178,7 @@ class Client(CommandLineApplication):
             raise RuntimeError("No response received from server")
 
         if message_type != MessageType.LOGIN_RESPONSE:
-            raise RuntimeError("Recieved incorrect type response from server")
+            raise RuntimeError("Received incorrect type response from server")
 
         (encrypted_session_token,) = LoginResponse.decode_packet(payload)
         logger.debug("Received encrypted token bytes %s", encrypted_session_token)
@@ -157,10 +194,12 @@ class Client(CommandLineApplication):
         return payload
 
     def send_key_request(self, receiver_name: str | None = None) -> bytes:
-        """Send a pubblic key request to the server.
+        """Send a public key request to the server.
 
-        :param receiver_name: The name of the user who's key should be requested.
-        :return: The KeyResponse packet from the server.
+        :param receiver_name: The name of the user whose key should be
+        requested. Will request from ``stdin`` if not present.
+
+        :return: The ``KeyResponse`` packet from the server.
         """
         if not receiver_name:
             receiver_name = input("Who's key are we requesting? ")
@@ -172,7 +211,7 @@ class Client(CommandLineApplication):
             raise RuntimeError("No response received from the server")
 
         if message_type != MessageType.KEY_RESPONSE:
-            logger.error("Recieved incorrect type response from server")
+            logger.error("Received incorrect type response from server")
             raise SystemExit
 
         (public_key,) = KeyResponse.decode_packet(payload)
@@ -181,7 +220,7 @@ class Client(CommandLineApplication):
             logger.warning("The requested user is not registered")
         else:
             self.key_cache[receiver_name] = public_key
-            logger.info("Received %s's key:", receiver_name)
+            logger.info("Received %s's key", receiver_name)
 
         return payload
 
@@ -192,8 +231,11 @@ class Client(CommandLineApplication):
     ) -> None:
         """Send a create request to the server.
 
-        :param receiver_name: The name of the person to send the messag to.
-        :param message: The message to be sent.
+        :param receiver_name: The name of the person to send the message
+        to. Will request from ``stdin`` if not present.
+
+        :param message: The message to be sent. Will request from
+        ``stdin`` if not present.
         """
         if self.session_token is None:
             logger.error("Please log in before sending messages")
@@ -257,20 +299,14 @@ class Client(CommandLineApplication):
             raise RuntimeError("No response received from the server")
 
         if message_type != MessageType.READ_RESPONSE:
-            raise RuntimeError("Incorrect type message recieved from the server.")
+            raise RuntimeError("Incorrect type message received from the server.")
 
         self.read_message_response(payload)
 
         return payload
 
     def run(self) -> None:
-        """Ask the user to input message and send request to server.
-
-        :param receiver_name: The name of the user to send the message to.
-        Will request from ``stdin`` if not present. Defaults to ``None``.
-        :param message: The message to send. Will request from
-        ``stdin`` if not present. Defaults to ``None``.
-        """
+        """Ask the user to input message and send request to server."""
         help_text = (
             "'register': Register your name and public key with the server.\n"
             "'login': Get a token from the server for sending and receiving messages.\n"

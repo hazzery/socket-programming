@@ -8,6 +8,24 @@
 
 ## Usage Instructions
 
+To run both the server and client, the project dependencies must be installed.
+Create a virtual environment inside the project directory and run `pip install.
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install .
+```
+
+We must also create a certificate so that the client can verify it is
+communicating with the correct server (using SSL). Currently the certificate
+must be called `server_cert.pem` and the private key must be called
+`server_key.pem`. You can create these by running `openssl`.
+
+```bash
+openssl req -x509 -newkey rsa:2048 -keyout server_key.pem -out server_cert.pem -days 365
+```
+
 To start the server program, execute the following command in the project directory.
 
 ```bash

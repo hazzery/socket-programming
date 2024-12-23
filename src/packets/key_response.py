@@ -4,7 +4,6 @@ Defines the KeyResponse class which is used to encode and decode
 public key response packets.
 """
 
-import logging
 import struct
 
 import rsa
@@ -21,8 +20,6 @@ class KeyResponse(Packet, struct_format="!HH"):
 
     def to_bytes(self) -> bytes:
         """Encode the key response packet into a byte array."""
-        logging.info("Creating key response")
-
         if self.public_key is None:
             return struct.pack(self.struct_format, 0, 0)
 

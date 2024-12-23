@@ -4,7 +4,6 @@ Defines the KeyRequest class which is used to encode and decode
 public key request packets.
 """
 
-import logging
 import struct
 
 from src.packets.packet import Packet
@@ -19,8 +18,6 @@ class KeyRequest(Packet, struct_format="!H"):
 
     def to_bytes(self) -> bytes:
         """Encode the key request packet into a byte array."""
-        logging.debug("Creating key request for %s", self.user_name)
-
         packet = struct.pack(
             self.struct_format,
             len(self.user_name.encode()),
