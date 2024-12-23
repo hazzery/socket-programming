@@ -25,6 +25,9 @@ from src.packets.registration_request import RegistrationRequest
 from src.packets.session_wrapper import SessionWrapper
 from src.packets.type_wrapper import TypeWrapper
 from src.port_number import PortNumber
+from src.receive_all import receive_all
+
+RECEIVE_BUFFER_SIZE = 4096
 
 logger = logging.getLogger(__name__)
 
@@ -308,7 +311,7 @@ class Server(CommandLineApplication):
         :param connection_socket: A socket connected to a client instance.
         """
         try:
-            packet = connection_socket.recv(4096)
+            packet = receive_all(connection_socket, RECEIVE_BUFFER_SIZE)
             if len(packet) == 0:
                 connection_socket.close()
                 logger.info("Closed client connection")
