@@ -1,11 +1,15 @@
 """Client side program.
 
-Run with ``python3 -m client <host name> <port number> <username> <message_type>``
+Run with ``python3 -m client <host name> <port number> <username>``
 """
 
+import argparse
 import sys
 
 from logging_config import configure_logging
+from src.parse_hostname import parse_hostname
+from src.parse_username import parse_username
+from src.port_number import PortNumber
 
 from .client import Client
 
@@ -14,8 +18,33 @@ def main() -> None:
     """Run the client side of the program."""
     configure_logging("client")
 
+    argument_parser = argparse.ArgumentParser(
+        "Client",
+        description="Open a client to communicate to the server",
+    )
+
+    argument_parser.add_argument(
+        "hostname",
+        help=(
+            "The address the server is running on. "
+            'Can be an IPv4 or IPv6 address, a domain name, or "localhost"'
+        ),
+        type=parse_hostname,
+    )
+    argument_parser.add_argument(
+        "port_number",
+        help="The port number for the server to run on",
+        type=PortNumber,
+    )
+    argument_parser.add_argument(
+        "username",
+        help="The name of the user to connect to the server as",
+        type=parse_username,
+    )
+
+    arguments = argument_parser.parse_args()
     try:
-        client = Client(sys.argv[1:])
+        client = Client(arguments.hostname, arguments.port_number, arguments.username)
         client.run()
     except SystemExit:
         sys.exit(1)

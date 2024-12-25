@@ -6,13 +6,11 @@ import secrets
 import selectors
 import socket
 import ssl
-from collections import OrderedDict
 from collections.abc import Callable, Mapping
 from typing import Final, TypeAlias
 
 import rsa
 
-from src.command_line_application import CommandLineApplication
 from src.message_type import MessageType
 from src.packets.create_request import CreateRequest
 from src.packets.key_request import KeyRequest
@@ -24,8 +22,6 @@ from src.packets.read_response import ReadResponse
 from src.packets.registration_request import RegistrationRequest
 from src.packets.session_wrapper import SessionWrapper
 from src.packets.type_wrapper import TypeWrapper
-from src.parse_hostname import parse_hostname
-from src.port_number import PortNumber
 from src.receive_all import receive_all
 
 RECEIVE_BUFFER_SIZE = 4096
@@ -33,22 +29,19 @@ RECEIVE_BUFFER_SIZE = 4096
 logger = logging.getLogger(__name__)
 
 
-class Server(CommandLineApplication):
+class Server:
     """A server side program that receives messages from clients and stores them.
 
     The server can be run with ``python3 -m server <hostname> <port number>``.
     """
 
-    def __init__(self, arguments: list[str]) -> None:
+    def __init__(self, hostname: str, port_number: int) -> None:
         """Initialise the server with a specified port number.
 
         :param arguments: The program arguments from the command line.
         """
-        super().__init__(OrderedDict(hostname=parse_hostname, port_number=PortNumber))
-
-        self.hostname: str
-        self.port_number: PortNumber
-        self.hostname, self.port_number = self.parse_arguments(arguments)
+        self.hostname = hostname
+        self.port_number = port_number
 
         self.running = True
         self.selector = selectors.DefaultSelector()
@@ -82,8 +75,12 @@ class Server(CommandLineApplication):
                 server_side=True,
             )
         except OSError as error:
-            message = "Error binding socket on provided port"
-            logger.exception(message)
+            logger.critical(
+                "Error binding socket on provided address %s:%d",
+                self.hostname,
+                self.port_number,
+            )
+            logger.debug("", exc_info=True)
             raise SystemExit from error
 
     def accept_connection(self, welcoming_socket: socket.socket) -> None:
