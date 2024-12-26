@@ -10,8 +10,7 @@ from src.packets.packet import Packet
 def test_fail_subclass() -> None:
     """Test Packet __init_subclass__ function.
 
-    Ensure that we cannot subclass from CommandLineApplication
-    without specifying a struct format and message type.
+    Ensure that we cannot subclass from Packet without specifying a struct format.
     """
     with pytest.raises(ValueError, match="Invalid struct format"):
 
