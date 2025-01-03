@@ -38,7 +38,8 @@ class Server:
     def __init__(self, hostname: str, port_number: int) -> None:
         """Initialise the server with a specified port number.
 
-        :param arguments: The program arguments from the command line.
+        :param hostname: The address to host the server on.
+        :param port_number: The port number for the server to be exposed on.
         """
         self.hostname = hostname
         self.port_number = port_number
@@ -50,23 +51,33 @@ class Server:
         self.sessions: dict[bytes, str] = {}
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
-    def secure_socket(self) -> ssl.SSLSocket:
+    def secure_socket(
+        self,
+        *,
+        certificate: str,
+        key: str,
+    ) -> ssl.SSLSocket:
         """Create a new SSL socket using the certificate and key on the disk.
+
+        :param certificate: A path to a PEM enccoded SSL certificate.
+        :param key: A path to a PEM encoded SSL certificate private key.
 
         :return: An SSL socket object configured as the Server's welcoming socket.
         """
-        if not pathlib.Path("server_cert.pem").exists():
-            logger.critical("No certificate file `server_cert.pem` found")
+        if not pathlib.Path(certificate).exists():
+            message = f"No certificate file `{certificate}` found"
+            logger.critical(message)
             raise SystemExit
 
-        if not pathlib.Path("server_key.pem").exists():
-            logger.critical("No certificate key file `server_key.pem` found")
+        if not pathlib.Path(key).exists():
+            message = f"No certificate key file `{key}` found"
+            logger.critical(message)
             raise SystemExit
 
         ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         ssl_context.load_cert_chain(
-            certfile="server_cert.pem",
-            keyfile="server_key.pem",
+            certfile=certificate,
+            keyfile=key,
         )
 
         try:
@@ -98,14 +109,45 @@ class Server:
             self.run_server,
         )
 
-    def run(self, *, welcoming_socket: socket.socket | None = None) -> None:
+    def run(
+        self,
+        *,
+        welcoming_socket: socket.socket | None = None,
+        certificate: str | None = None,
+        key_file: str | None = None,
+    ) -> None:
         """Initiate the welcoming socket and start main event loop.
+
+        Note: Must specify ``welcoming_socket`` or both ``certificate``
+        and ``key_file``. Specifying an incorrect set of these
+        parameters will raise a ValueError.
 
         :param welcoming_socket: The socket to initialise as the
         server's welcoming socket. Leave unspecified or ``None`` to
         create a new SSL socket to use.
+
+        :param certificate: A path to a PEM enccoded SSL certificate.
+        :param key: A path to a PEM encoded SSL certificate private key.
         """
-        welcoming_socket = welcoming_socket or self.secure_socket()
+        if (not welcoming_socket and not (certificate and key_file)) or (
+            welcoming_socket and (certificate or key_file)
+        ):
+            logger.error(
+                "Must specify welcoming_socket, or both of certificate and key_file",
+            )
+            raise ValueError
+
+        if certificate and key_file:
+            welcoming_socket = self.secure_socket(
+                certificate=certificate,
+                key=key_file,
+            )
+        elif not welcoming_socket:
+            # This will never execute becuase of the initial if check
+            # which raises an exception. However, having this here
+            # pleases the type checker.
+            return
+
         logger.info(
             "Server started on %s port %s",
             self.hostname,
