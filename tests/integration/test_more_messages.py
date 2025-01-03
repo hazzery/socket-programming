@@ -20,7 +20,7 @@ from src.packets.read_response import ReadResponse
 
 MAXIMUM_MESSAGES_PER_RESPONSE = 255
 HOST_NAME = "localhost"
-PORT_NUMBER = "1024"
+PORT_NUMBER = 1024
 RECIPIENT_NAME = "Recipient"
 
 
@@ -31,10 +31,10 @@ def test_more_messages() -> None:
 
     assert len(set(names)) == MAXIMUM_MESSAGES_PER_RESPONSE + 1
 
-    server_object = server.Server([HOST_NAME, PORT_NUMBER])
+    server_object = server.Server(HOST_NAME, PORT_NUMBER)
 
     unencrypted_socket = socket.create_server(
-        (HOST_NAME, int(PORT_NUMBER)),
+        (HOST_NAME, PORT_NUMBER),
     )
 
     server_thread = threading.Thread(
@@ -44,18 +44,22 @@ def test_more_messages() -> None:
     server_thread.start()
 
     recipient_client = client.Client(
-        [HOST_NAME, PORT_NUMBER, RECIPIENT_NAME],
+        HOST_NAME,
+        PORT_NUMBER,
+        RECIPIENT_NAME,
         connection_socket=socket.create_connection(
-            (HOST_NAME, int(PORT_NUMBER)),
+            (HOST_NAME, PORT_NUMBER),
         ),
     )
     recipient_client.send_registration_request()
 
     for sender_name in names:
         sender_client = client.Client(
-            [HOST_NAME, PORT_NUMBER, sender_name],
+            HOST_NAME,
+            PORT_NUMBER,
+            sender_name,
             connection_socket=socket.create_connection(
-                (HOST_NAME, int(PORT_NUMBER)),
+                (HOST_NAME, PORT_NUMBER),
             ),
         )
         sender_client.send_registration_request()
