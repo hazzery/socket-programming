@@ -4,13 +4,11 @@ import logging
 import pathlib
 import socket
 import ssl
-from collections import OrderedDict
 from collections.abc import Callable, Mapping
 from typing import Final, TypeAlias
 
 import rsa
 
-from src.command_line_application import CommandLineApplication
 from src.message_type import MessageType
 from src.packets.create_request import CreateRequest
 from src.packets.key_request import KeyRequest
@@ -23,53 +21,47 @@ from src.packets.read_response import ReadResponse
 from src.packets.registration_request import RegistrationRequest
 from src.packets.session_wrapper import SessionWrapper
 from src.packets.type_wrapper import TypeWrapper
-from src.parse_hostname import parse_hostname
-from src.parse_username import parse_username
-from src.port_number import PortNumber
 from src.receive_all import receive_all
-
-logger = logging.getLogger(__name__)
 
 # Buffer size chosen as per note in docs:
 # https://docs.python.org/3/library/socket.html#socket.socket.recv
 RECEIVE_BUFFER_SIZE = 4096
 
+logger = logging.getLogger(__name__)
 
 socket.setdefaulttimeout(1)
 
 
-class Client(CommandLineApplication):
+class Client:
     """Send and receives messages to and from the server."""
 
     def __init__(
         self,
-        arguments: list[str],
+        hostname: str,
+        port_number: int,
+        username: str,
+        *,
         connection_socket: socket.socket | None = None,
     ) -> None:
         """Initialise the client with specified arguments.
 
-        :param arguments: A list containing the host name, port number,
-        and username.
+        :param hostname: The address which the server is hosted on. Can
+        be an IPv4 or IPv6 address, a domain name, or "localhost".
+
+        :param port_number: The port number which the server is
+        listening on. Can be from 1024 to 6400 (inclusive).
+
+        :param username: The name of the user wanting to connect.
+
         :param connection_socket: The socket to communicate with the server on.
         """
-        super().__init__(
-            OrderedDict(
-                host_name=parse_hostname,
-                port_number=PortNumber,
-                user_name=parse_username,
-            ),
-        )
-
-        parsed_arguments: tuple[str, PortNumber, str]
-        parsed_arguments = self.parse_arguments(arguments)
-
-        self.host_name, self.port_number, self.user_name = parsed_arguments
+        self.user_name = username
 
         logger.debug(
             "Client for %s port %s created by %s",
-            self.host_name,
-            self.port_number,
-            self.user_name,
+            hostname,
+            port_number,
+            username,
         )
 
         self.public_key, self.__private_key = rsa.newkeys(512)
@@ -83,11 +75,24 @@ class Client(CommandLineApplication):
         self.session_token: bytes | None = None
         self.key_cache: dict[str, rsa.PublicKey] = {}
         self.connection_socket = connection_socket or self.secure_connection(
+            hostname,
+            port_number,
             "server_cert.pem",
         )
 
-    def secure_connection(self, cafile: str | None = None) -> ssl.SSLSocket:
+    def secure_connection(
+        self,
+        hostname: str,
+        port_number: int,
+        cafile: str,
+    ) -> ssl.SSLSocket:
         """Create a default context SSLSocket and connect to the server.
+
+        :param hostname: The address which the server is hosted on. Can
+        be an IPv4 or IPv6 address, a domain name, or "localhost".
+
+        :param port_number: The port number which the server is
+        listening on. Can be from 1024 to 6400 (inclusive).
 
         :param cafile: The server's SSL certificate in PEM format.
         Defaults to ``None``.
@@ -105,9 +110,9 @@ class Client(CommandLineApplication):
         connection_socket = socket.socket()
         secure_socket = ssl_context.wrap_socket(
             connection_socket,
-            server_hostname=self.host_name,
+            server_hostname=hostname,
         )
-        secure_socket.connect((self.host_name, self.port_number))
+        secure_socket.connect((hostname, port_number))
         return secure_socket
 
     def send_request(

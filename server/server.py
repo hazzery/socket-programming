@@ -6,13 +6,11 @@ import secrets
 import selectors
 import socket
 import ssl
-from collections import OrderedDict
 from collections.abc import Callable, Mapping
 from typing import Final, TypeAlias
 
 import rsa
 
-from src.command_line_application import CommandLineApplication
 from src.message_type import MessageType
 from src.packets.create_request import CreateRequest
 from src.packets.key_request import KeyRequest
@@ -24,8 +22,6 @@ from src.packets.read_response import ReadResponse
 from src.packets.registration_request import RegistrationRequest
 from src.packets.session_wrapper import SessionWrapper
 from src.packets.type_wrapper import TypeWrapper
-from src.parse_hostname import parse_hostname
-from src.port_number import PortNumber
 from src.receive_all import receive_all
 
 RECEIVE_BUFFER_SIZE = 4096
@@ -33,22 +29,20 @@ RECEIVE_BUFFER_SIZE = 4096
 logger = logging.getLogger(__name__)
 
 
-class Server(CommandLineApplication):
+class Server:
     """A server side program that receives messages from clients and stores them.
 
     The server can be run with ``python3 -m server <hostname> <port number>``.
     """
 
-    def __init__(self, arguments: list[str]) -> None:
+    def __init__(self, hostname: str, port_number: int) -> None:
         """Initialise the server with a specified port number.
 
-        :param arguments: The program arguments from the command line.
+        :param hostname: The address to host the server on.
+        :param port_number: The port number for the server to be exposed on.
         """
-        super().__init__(OrderedDict(hostname=parse_hostname, port_number=PortNumber))
-
-        self.hostname: str
-        self.port_number: PortNumber
-        self.hostname, self.port_number = self.parse_arguments(arguments)
+        self.hostname = hostname
+        self.port_number = port_number
 
         self.running = True
         self.selector = selectors.DefaultSelector()
@@ -57,23 +51,33 @@ class Server(CommandLineApplication):
         self.sessions: dict[bytes, str] = {}
         self.messages: dict[str, list[tuple[str, bytes]]] = {}
 
-    def secure_socket(self) -> ssl.SSLSocket:
+    def secure_socket(
+        self,
+        *,
+        certificate: str,
+        key: str,
+    ) -> ssl.SSLSocket:
         """Create a new SSL socket using the certificate and key on the disk.
+
+        :param certificate: A path to a PEM enccoded SSL certificate.
+        :param key: A path to a PEM encoded SSL certificate private key.
 
         :return: An SSL socket object configured as the Server's welcoming socket.
         """
-        if not pathlib.Path("server_cert.pem").exists():
-            logger.critical("No certificate file `server_cert.pem` found")
+        if not pathlib.Path(certificate).exists():
+            message = f"No certificate file `{certificate}` found"
+            logger.critical(message)
             raise SystemExit
 
-        if not pathlib.Path("server_key.pem").exists():
-            logger.critical("No certificate key file `server_key.pem` found")
+        if not pathlib.Path(key).exists():
+            message = f"No certificate key file `{key}` found"
+            logger.critical(message)
             raise SystemExit
 
         ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         ssl_context.load_cert_chain(
-            certfile="server_cert.pem",
-            keyfile="server_key.pem",
+            certfile=certificate,
+            keyfile=key,
         )
 
         try:
@@ -82,8 +86,12 @@ class Server(CommandLineApplication):
                 server_side=True,
             )
         except OSError as error:
-            message = "Error binding socket on provided port"
-            logger.exception(message)
+            logger.critical(
+                "Error binding socket on provided address %s:%d",
+                self.hostname,
+                self.port_number,
+            )
+            logger.debug("", exc_info=True)
             raise SystemExit from error
 
     def accept_connection(self, welcoming_socket: socket.socket) -> None:
@@ -101,14 +109,45 @@ class Server(CommandLineApplication):
             self.run_server,
         )
 
-    def run(self, *, welcoming_socket: socket.socket | None = None) -> None:
+    def run(
+        self,
+        *,
+        welcoming_socket: socket.socket | None = None,
+        certificate: str | None = None,
+        key_file: str | None = None,
+    ) -> None:
         """Initiate the welcoming socket and start main event loop.
+
+        Note: Must specify ``welcoming_socket`` or both ``certificate``
+        and ``key_file``. Specifying an incorrect set of these
+        parameters will raise a ValueError.
 
         :param welcoming_socket: The socket to initialise as the
         server's welcoming socket. Leave unspecified or ``None`` to
         create a new SSL socket to use.
+
+        :param certificate: A path to a PEM enccoded SSL certificate.
+        :param key: A path to a PEM encoded SSL certificate private key.
         """
-        welcoming_socket = welcoming_socket or self.secure_socket()
+        if (not welcoming_socket and not (certificate and key_file)) or (
+            welcoming_socket and (certificate or key_file)
+        ):
+            logger.error(
+                "Must specify welcoming_socket, or both of certificate and key_file",
+            )
+            raise ValueError
+
+        if certificate and key_file:
+            welcoming_socket = self.secure_socket(
+                certificate=certificate,
+                key=key_file,
+            )
+        elif not welcoming_socket:
+            # This will never execute becuase of the initial if check
+            # which raises an exception. However, having this here
+            # pleases the type checker.
+            return
+
         logger.info(
             "Server started on %s port %s",
             self.hostname,
