@@ -27,9 +27,7 @@ from src.receive_all import receive_all
 # https://docs.python.org/3/library/socket.html#socket.socket.recv
 RECEIVE_BUFFER_SIZE = 4096
 
-
 logger = logging.getLogger(__name__)
-
 
 socket.setdefaulttimeout(1)
 

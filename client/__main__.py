@@ -14,10 +14,8 @@ from src.port_number import PortNumber
 from .client import Client
 
 
-def main() -> None:
-    """Run the client side of the program."""
-    configure_logging("client")
-
+def configure_cli() -> argparse.Namespace:
+    """Configure command line arguments."""
     argument_parser = argparse.ArgumentParser(
         "Client",
         description="Open a client to communicate to the server",
@@ -41,8 +39,22 @@ def main() -> None:
         help="The name of the user to connect to the server as",
         type=parse_username,
     )
+    argument_parser.add_argument(
+        "--certificate",
+        "-c",
+        help="Path to the server's SSL certificate (PEM encoding)",
+        default="server_cert.pem",
+    )
 
-    arguments = argument_parser.parse_args()
+    return argument_parser.parse_args()
+
+
+def main() -> None:
+    """Run the client side of the program."""
+    configure_logging("client")
+
+    arguments = configure_cli()
+
     try:
         client = Client(arguments.hostname, arguments.port_number, arguments.username)
         client.run()
