@@ -42,6 +42,7 @@ class Client:
         username: str,
         *,
         connection_socket: socket.socket | None = None,
+        certificate: str | None = None,
     ) -> None:
         """Initialise the client with specified arguments.
 
@@ -54,7 +55,16 @@ class Client:
         :param username: The name of the user wanting to connect.
 
         :param connection_socket: The socket to communicate with the server on.
+
+        :param certificate: Path to the server's SSL certificate (PEM encoding).
+        Do not specify if providing ``connection_socket``.
         """
+        if bool(connection_socket) == bool(certificate):
+            logger.critical(
+                "Must specify exactly one of connection_socket and certificate",
+            )
+            raise SystemExit
+
         self.user_name = username
 
         logger.debug(
@@ -74,11 +84,19 @@ class Client:
 
         self.session_token: bytes | None = None
         self.key_cache: dict[str, rsa.PublicKey] = {}
-        self.connection_socket = connection_socket or self.secure_connection(
-            hostname,
-            port_number,
-            "server_cert.pem",
-        )
+        if connection_socket:
+            self.connection_socket = connection_socket
+        elif certificate:
+            self.connection_socket = self.secure_connection(
+                hostname,
+                port_number,
+                certificate,
+            )
+        else:
+            # This will never execute becuase of the initial if check
+            # which raises an exception. However, having this here
+            # pleases the type checker.
+            raise SystemExit
 
     def secure_connection(
         self,
