@@ -6,6 +6,11 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 
+## Note
+
+This project is under current development, check the [`dev` branch](https://github.com/hazzery/socket-programming/tree/dev)
+to see the latest contributions.
+
 ## Usage Instructions
 
 To start the server program, execute the following command in the project directory.
