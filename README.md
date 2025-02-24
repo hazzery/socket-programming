@@ -9,7 +9,7 @@
 ## Usage Instructions
 
 To run both the server and client, the project dependencies must be installed.
-Create a virtual environment inside the project directory and run `pip install.
+Create a virtual environment inside the project directory and run `pip install`.
 
 ```bash
 python3 -m venv venv
