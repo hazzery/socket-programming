@@ -15,7 +15,7 @@ classifiers = [
   "Intended Audience :: Education",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 tests = ["pytest", "pytest-cov"]
 lint = ["ruff", "mypy", "pre-commit"]
 

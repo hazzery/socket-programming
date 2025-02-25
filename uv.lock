@@ -357,7 +357,7 @@ dependencies = [
     { name = "rsa" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 lint = [
     { name = "mypy" },
     { name = "pre-commit" },
@@ -369,15 +369,18 @@ tests = [
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "mypy", marker = "extra == 'lint'" },
-    { name = "pre-commit", marker = "extra == 'lint'" },
-    { name = "pytest", marker = "extra == 'tests'" },
-    { name = "pytest-cov", marker = "extra == 'tests'" },
-    { name = "rsa" },
-    { name = "ruff", marker = "extra == 'lint'" },
+requires-dist = [{ name = "rsa" }]
+
+[package.metadata.requires-dev]
+lint = [
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "ruff" },
 ]
-provides-extras = ["tests", "lint"]
+tests = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+]
 
 [[package]]
 name = "tomli"
