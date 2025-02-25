@@ -5,7 +5,9 @@ authors = [{ name = "Harry Parkes", email = "harrydparkes@proton.me" }]
 description = "Sever-Client program pair capable of delivering messages between clients"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["rsa"]
+dependencies = [
+    "rsa",
+]
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: GNU Affero General Public License v3",
