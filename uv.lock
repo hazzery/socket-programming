@@ -369,7 +369,7 @@ tests = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "rsa" }]
+requires-dist = [{ name = "rsa", specifier = ">=4.9" }]
 
 [package.metadata.requires-dev]
 lint = [
