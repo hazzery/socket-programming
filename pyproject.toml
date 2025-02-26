@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "socket-programming"
 version = "1.0.0"
@@ -15,13 +19,20 @@ classifiers = [
   "Intended Audience :: Education",
 ]
 
+[project.urls]
+"Homepage" = "https://github.com/hazzery/socket-programming"
+"Bug Tracker" = "https://github.com/hazzery/socket-programming/issues"
+
+[project.scripts]
+client = "client:__main__.main"
+server = "server:__main__.main"
+
 [dependency-groups]
 tests = ["pytest", "pytest-cov"]
 lint = ["ruff", "mypy", "pre-commit"]
 
-[project.urls]
-"Homepage" = "https://github.com/hazzery/socket-programming"
-"Bug Tracker" = "https://github.com/hazzery/socket-programming/issues"
+[tool.setuptools]
+packages = ["client", "server", "src", "src.packets"]
 
 [tool.ruff]
 exclude = ["docs/conf.py"]
