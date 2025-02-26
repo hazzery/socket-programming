@@ -6,7 +6,7 @@ Run with ``python3 -m client <host name> <port number> <username>``
 import argparse
 import sys
 
-from logging_config import configure_logging
+from src.logging_config import configure_logging
 from src.parse_hostname import parse_hostname
 from src.parse_username import parse_username
 from src.port_number import PortNumber

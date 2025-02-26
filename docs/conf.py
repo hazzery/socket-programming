@@ -40,7 +40,6 @@ apidoc_excluded_paths = [
     "__pycache__",
     "venv",
     "docs",
-    "logging_config.py",
 ]
 apidoc_separate_modules = True
 apidoc_toc_file = False
