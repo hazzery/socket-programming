@@ -69,8 +69,7 @@ class Client(CommandLineApplication):
         except socket.gaierror as error:
             logger.error(error)
             raise ValueError(
-                "Invalid host name, must be an IP address, domain name,"
-                ' or "localhost"'
+                'Invalid host name, must be an IP address, domain name, or "localhost"'
             ) from error
 
         return host_name
