@@ -98,8 +98,7 @@ class Server(CommandLineApplication):
             message.decode(),
         )
         print(
-            f"{sender_name} sends the message "
-            f'"{message.decode()}" to {receiver_name}'
+            f'{sender_name} sends the message "{message.decode()}" to {receiver_name}'
         )
 
     def run_server(self, welcoming_socket: socket.socket) -> None:
