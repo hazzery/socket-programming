@@ -56,7 +56,12 @@ def main() -> None:
     arguments = configure_cli()
 
     try:
-        client = Client(arguments.hostname, arguments.port_number, arguments.username)
+        client = Client(
+            arguments.hostname,
+            arguments.port_number,
+            arguments.username,
+            certificate=arguments.certificate,
+        )
         client.run()
     except SystemExit:
         sys.exit(1)
