@@ -5,21 +5,33 @@ authors = [{ name = "Harry Parkes", email = "harrydparkes@proton.me" }]
 description = "Sever-Client program pair capable of delivering messages between clients"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["rsa"]
+dependencies = ["rsa>=4.9"]
+license = "AGPL-3.0-only"
 classifiers = [
-  "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: GNU Affero General Public License v3",
-  "Operating System :: OS Independent",
-  "Intended Audience :: Education",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Education",
 ]
-
-[project.optional-dependencies]
-tests = ["pytest", "pytest-cov"]
-lint = ["ruff", "mypy", "pre-commit"]
 
 [project.urls]
 "Homepage" = "https://github.com/hazzery/socket-programming"
 "Bug Tracker" = "https://github.com/hazzery/socket-programming/issues"
+
+[project.scripts]
+client = "client:__main__.main"
+server = "server:__main__.main"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = ["client", "server", "src"]
+module-root = ""
+
+[dependency-groups]
+tests = ["pytest", "pytest-cov"]
+lint = ["ruff", "mypy", "pre-commit"]
 
 [tool.ruff]
 exclude = ["docs/conf.py"]
