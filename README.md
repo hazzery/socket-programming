@@ -8,8 +8,7 @@
 
 ## Note
 
-This project is under current development, check the [`dev` branch](https://github.com/hazzery/socket-programming/tree/dev)
-to see the latest contributions.
+This repository has been moved to [GitLab](https://gitlab.com/hazzery/socket-programming.git)
 
 ## Usage Instructions
 
